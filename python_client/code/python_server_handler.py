@@ -1,11 +1,32 @@
 from datastructures.array import ArrayList
 from datastructures.hash_table import HashTable
 import json
+from settings import IP_ADDRESS, SERVER_PORT
+import socket
 class ServerHandler:
     def __init__(self, server):
         self.server = server
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.ip_address = IP_ADDRESS
+        self.port = SERVER_PORT
+        self.connected = False
     def connect(self):
-        pass
+        self.client_socket.connect((self.ip_address, self.port))
+        try:
+            message = "Connecting to server..."
+            self.client_socket.sendall(message.encode('utf-8'))
+            response = self.client_socket.recv(1024)
+            if response.decode('utf-8') == "Connection successful":
+                self.connected = True
+                print("Connected to server successfully.")
+        except Exception as e:
+            print(f"Error occurred while connecting to server: {e}")
+            self.client_socket.close()
+    def disconnect(self):
+        if self.connected:
+            self.client_socket.close()
+            self.connected = False
+            print("Disconnected from server.")
     def handle_request(self, request):
         # Process the incoming request and generate a response
         response = self.process_request(request)
