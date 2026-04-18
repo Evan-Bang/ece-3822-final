@@ -65,8 +65,8 @@ class BST:
 
         return x
     
-    # FIX: name corrected + recursive calls fixed
     def _insert(self, node, key):
+        """Recursive insert function"""
         if node is None:
             self.elements += 1
             return Node(key)
@@ -109,6 +109,7 @@ class BST:
         return node
 
     def insert(self, key):
+        """Insert an element into the BST"""
         self.head = self._insert(self.head, key)
 
     def delete(self, key):
@@ -120,7 +121,7 @@ class BST:
         if node is None:
             return node
 
-        # 1. BST delete
+        # BST delete
         if key < node.key:
             node.left = self._delete(node.left, key)
         elif key > node.key:
@@ -128,7 +129,7 @@ class BST:
         else:
             # Node found
 
-            # Case A/B: 0 or 1 child
+            # 0 or 1 child
             if node.left is None:
                 self.elements -= 1
                 return node.right
@@ -136,7 +137,7 @@ class BST:
                 self.elements -= 1
                 return node.left
 
-            # Case C: 2 children
+            # 2 children
             temp = self._min_value_node(node.right)
             node.key = temp.key
             node.right = self._delete(node.right, temp.key)
@@ -146,29 +147,31 @@ class BST:
         if node is None:
             return node
 
-        # 2. Update height
+        # Update height
         node.height = 1 + max(self._get_tree_height(node.left),
                             self._get_tree_height(node.right))
 
-        # 3. Get balance
+        
+
+        # balance tree
+
         balance = self._get_balance(node)  # FIX: consistent balance usage
 
-        # 4. Rebalance
-
-        # LEFT LEFT
+        
+        # left left rotation
         if balance > 1 and self._get_balance(node.left) >= 0:
             return self.right_rotate(node)
 
-        # LEFT RIGHT
+        # left left rotation
         if balance > 1 and self._get_balance(node.left) < 0:
             node.left = self.left_rotate(node.left)
             return self.right_rotate(node)
 
-        # RIGHT RIGHT
+        # right right rotation
         if balance < -1 and self._get_balance(node.right) <= 0:
             return self.left_rotate(node)
 
-        # RIGHT LEFT
+        # right left rotation
         if balance < -1 and self._get_balance(node.right) > 0:
             node.right = self.right_rotate(node.right)
             return self.left_rotate(node)
@@ -176,9 +179,11 @@ class BST:
         return node
 
     def search(self, key):
+        """Return element from BST"""
         return self._search(self.head, key)
 
     def _search(self, node, key):
+        """Recursive element search"""
         if node is None or node.key == key:
             return node
         if key < node.key:
@@ -208,6 +213,7 @@ class BST:
         return result
     
     def range_query(self, low, high):
+        """ Ranged query of BST, returns array of elements between low and high """
         stack = Stack()
         current = self.head
         result = ArrayList()
@@ -238,7 +244,7 @@ class BST:
 
     def __len__(self):
         """
-        Get the length of the list
+        Get the length of the BST
         """
         # TODO: Return the size
         return self.elements
