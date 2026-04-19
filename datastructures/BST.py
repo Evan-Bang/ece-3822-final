@@ -205,7 +205,7 @@ class BST:
         return self._search(node.right, key)
     
     def get_elements_sorted(self):
-        """Returns all elements in order from largest to smallest"""
+        """Returns all elements in order from smallest to largest, inorder traversal"""
         stack = Stack()
         current = self.head
         result = ArrayList()
