@@ -155,7 +155,6 @@ class BST:
             temp = self._min_value_node(node.right)
             node.key = temp.key
             node.right = self._delete(node.right, temp.key)
-            self.elements -= 1  # FIX: missing decrement for 2-child case
 
         # If tree had one node
         if node is None:
@@ -165,11 +164,9 @@ class BST:
         node.height = 1 + max(self._get_tree_height(node.left),
                             self._get_tree_height(node.right))
 
-        
-
         # balance tree
 
-        balance = self._get_balance(node)  # FIX: consistent balance usage
+        balance = self._get_balance(node) 
 
         
         # left left rotation
@@ -194,7 +191,11 @@ class BST:
 
     def search(self, key):
         """Return element from BST"""
-        return self._search(self.head, key)
+        node = self._search(self.head, key)
+        if node is None:
+            return None
+        else:
+            return node.key
 
     def _search(self, node, key):
         """Recursive element search"""

@@ -11,7 +11,7 @@ This is so we have clean comparison logic for our BST.
 """
 class leaderboard_member:
     def __init__(self, uuid, score):
-        self._uuid = uuid
+        self.uuid = uuid
         self.score = score
 
 
