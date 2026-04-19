@@ -1,6 +1,20 @@
+"""
+BST.py - AVL binary search tree
+
+Author: Owen Ringrose
+Date: 4/17/2026
+
+Insertion logic from: https://www.geeksforgeeks.org/dsa/insertion-in-an-avl-tree/ Expanded this to add rest of BST functions
+
+**** Revision History ****
+-4/17/2026: implemented basic AVL structure
+-4/19/2026: Added get top_n
+"""
+
+
+
 from datastructures.array import ArrayList
 from datastructures.stack import Stack
-from datastructures.linkedlist import Linked_List
 
 class Node:
     def __init__(self, key):
@@ -200,7 +214,7 @@ class BST:
         while current is not None or len(stack) > 0:
             # Go as left as possible
             while current is not None:
-                stack.append(current)
+                stack.push(current)
                 current = current.left
 
             # Process node
@@ -222,7 +236,7 @@ class BST:
 
             while current is not None:
                 if current.key >= low:
-                    stack.append(current)
+                    stack.push(current)
                     current = current.left
                 else:
                     current = current.right
@@ -241,6 +255,32 @@ class BST:
             current = current.right
 
         return result
+    
+    def get_top_n(self, n):
+        """Return the top n elements. Returns items in an ArrayList"""
+        stack = Stack()
+        top_n = ArrayList()
+        current = self.head
+
+        if n <= 0:
+            return top_n
+
+        # Depth First basically
+        while current is not None or len(stack) > 0:
+            # explore right nodes first
+            while current is not None:
+                stack.push(current)
+                current = current.right
+
+            current = stack.pop()
+            top_n.append(current.key)
+            # If we reach n items exit early
+            if len(top_n) == n:
+                return top_n
+            current = current.left
+        return top_n
+
+            
 
     def __len__(self):
         """
@@ -248,6 +288,7 @@ class BST:
         """
         # TODO: Return the size
         return self.elements
+    
     
     def __contains__(self, key):
         return self.search(key) is not None
