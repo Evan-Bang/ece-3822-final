@@ -3,7 +3,8 @@ Player accounts and authentication.
 Create account / login: Dictionary with keys as usernames and passwords stored as encrypted hashes
 View player profile: provide information about play times, games played, scores, etc. from the json database, depending on which stats are public public via flags
 """
-
+import sys
+sys.path.append('../..')
 from datastructures.array import ArrayList
 from datastructures.hash_table import HashTable
 
@@ -33,4 +34,3 @@ class AccountManager:
          - If authentication is successful return True, else False
         """
         pass
-    

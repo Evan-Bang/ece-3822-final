@@ -3,6 +3,8 @@ Leaderboard manager
 """
 
 import json
+import sys
+sys.path.append('../..')
 from data_ingest import load_leaderboard_data as load_data
 from datastructures.BST import BST
 
@@ -23,9 +25,10 @@ class Leaderboard:
 
     def get_top_scores(self, game,n=10):
         """
-        return the top n sorted(scores) for the given game
+        return ArrayList of the top n sorted(scores) for the given game using the BST. returns top 10 by default
         """
-        pass
+        top_scores = self.leaderboards[game].get_top_n(n)
+        return top_scores
         
     def get_player_scores(self, game, username):
         """
