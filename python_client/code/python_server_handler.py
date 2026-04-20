@@ -37,14 +37,19 @@ class ServerHandler:
 class LoginHandler(ServerHandler):
     def process_request(self, request):
         # Handle login request and return response
-        self.username = request['username']
-        self.password = request['password']
+        self.username = request.get('username')
+        self.password = request.get('password')
         pass
 class CreateHandler(ServerHandler):
     def process_request(self, request):
         # Handle account creation request and return response
-        self.username = request['username']
-        self.password = request['password']
+        self.username = request.get('username')
+        self.password = request.get('password')
+        pass
+class PlayerDataHandler(ServerHandler):
+    def process_request(self, request):
+        # Handle player data request and return response
+        self.username = request.get('username')
         pass
 class UserData:
     def __init__(self, username):
@@ -80,9 +85,10 @@ class UserData:
         data.set('game_history', self.game_history)
         with open(self.data_file, 'w') as f:
             json.dump(data, f)
-    def get_id(username):
-        # get id from database
-        pass
+    def get_id(self, username):
+        request = HashTable()
+        request.set('username', username)
+        return PlayerDataHandler().process_request(request)
     def add_game_history(self, game, play_time, date):
         self.game_history.append((game, play_time, date))
     def get_game_history(self):

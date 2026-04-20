@@ -38,7 +38,7 @@ class prefix_tree:
             # Add each char as a node in trie
                 if char not in current.children:
                     current.children.set(char, prefix_node(char))
-                    current = current.chidlren.get(char)
+                    current = current.children.get(char)
 
                 # set to true when at end of word
                 current.is_end_of_word == True
