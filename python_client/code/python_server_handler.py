@@ -1,7 +1,7 @@
 from datastructures.array import ArrayList
 from datastructures.hash_table import HashTable
 import json
-from settings import IP_ADDRESS, SERVER_PORT
+from settings import *
 import socket
 class ServerHandler:
     def __init__(self, server):
@@ -28,29 +28,44 @@ class ServerHandler:
             self.connected = False
             print("Disconnected from server.")
     def handle_request(self, request):
-        # Process the incoming request and generate a response
+        # Process the incoming request
         response = self.process_request(request)
         return response
-    def process_request(self, request):
+    def process_request(self, request, client):
         # This method should be overridden by subclasses to handle specific request types
         pass
 class LoginHandler(ServerHandler):
-    def process_request(self, request):
+    def process_request(self, request, client):
         # Handle login request and return response
-        self.username = request.get('username')
-        self.password = request.get('password')
-        pass
+        client.send(json.dumps(request).encode())
+        response = client.recv(BUFFER_SIZE)
+        data = json.loads(response.decode('utf-8'))
+        return data.get('success')
 class CreateHandler(ServerHandler):
-    def process_request(self, request):
+    def process_request(self, request, client):
         # Handle account creation request and return response
-        self.username = request.get('username')
-        self.password = request.get('password')
-        pass
+        client.send(json.dumps(request).encode())
+        response = client.recv(BUFFER_SIZE)
+        data = json.loads(response.decode('utf-8'))
+        if data.get('success'):
+            return data.get('user_id')
+        else:
+            return None
 class PlayerDataHandler(ServerHandler):
-    def process_request(self, request):
+    def process_request(self, request, client):
         # Handle player data request and return response
-        self.username = request.get('username')
-        pass
+        client.send(json.dumps(request).encode())
+        response = client.recv(BUFFER_SIZE)
+        data = json.loads(response.decode('utf-8'))
+        return data
+class GameDataHandler(ServerHandler):
+    def process_request(self, request, client):
+        # Handle game data request and return response
+        self.leaderboard = request.get('game_name')
+        client.send(json.dumps(request).encode())
+        response = client.recv(BUFFER_SIZE)
+        self.data = json.loads(response.decode('utf-8'))
+        return self.data
 class UserData:
     def __init__(self, username):
         self.username = username
@@ -69,12 +84,14 @@ class UserData:
             self.save_data()
     def create_account(self, username, password):
         request = HashTable()
+        request.set('type', 'create_account')
         request.set('username', username)
         request.set('password', password)
         self.user_id = CreateHandler().process_request(request)
         pass
     def login(self, username, password):
         request = HashTable()
+        request.set('type', 'login')
         request.set('username', username)
         request.set('password', password)
         self.logged_in = LoginHandler().process_request(request)
@@ -87,10 +104,26 @@ class UserData:
             json.dump(data, f)
     def get_id(self, username):
         request = HashTable()
+        request.set('type', 'get_user_id')
         request.set('username', username)
         return PlayerDataHandler().process_request(request)
     def add_game_history(self, game, play_time, date):
         self.game_history.append((game, play_time, date))
     def get_game_history(self):
         return self.game_history
-    
+class GameData:
+    def __init__(self, game_name):
+        self.game_name = game_name
+        self.leaderboard = ArrayList()
+    def get_game_data(self):
+        request = HashTable()
+        request.set('type', 'get_game_data')
+        request.set('game_name', self.game_name)
+        self.game_data = GameDataHandler().process_request(request)
+        return self.game_data
+    def get_leaderboard(self):
+        request = HashTable()
+        request.set('type','leaderboard_query')
+        request.set('game_name', self.game_name)
+        self.leaderboard = ArrayList(GameDataHandler().process_request(request))
+        return self.leaderboard

@@ -2,6 +2,9 @@ import pygame
 import sys
 pygame.init()
 from settings import *
+from python_server_handler import *
+import os
+from game_instance_manager import *
 # Screen setup
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Virtual Arcade Login")
@@ -15,9 +18,9 @@ class PageManager:
         if self.current_page:
             self.current_page.draw(screen)
 class DrawLoginPage:
-    def __init__(self, screen):
+    def __init__(self, screen, page_manager):
         self.screen = screen
-
+        self.page_manager = page_manager
         # Input boxes
         self.username_rect = pygame.Rect(300, 200, 200, 40)
         self.password_rect = pygame.Rect(300, 260, 200, 40)
@@ -44,13 +47,20 @@ class DrawLoginPage:
             else:
                 self.active_box = None
 
+            # LOGIN BUTTON
             if self.login_button.collidepoint(event.pos):
-                print("Login clicked")
-                print("Username:", self.username_text)
-                print("Password:", self.password_text)
+                user = UserData(self.username_text)
+                user.login(self.username_text, self.password_text)
 
+                if user.logged_in:
+                    print("Login successful")
+                    self.page_manager.set_page(DrawMainPage(self.screen, self.page_manager, self.username_text))
+                else:
+                    print("Login failed")
+
+            # GO TO CREATE ACCOUNT PAGE
             if self.create_button.collidepoint(event.pos):
-                print("Go to create account page")
+                self.page_manager.set_page(DrawCreateAccountPage(self.screen, self.page_manager))
 
         if event.type == pygame.KEYDOWN:
             if self.active_box == 'username':
@@ -94,11 +104,11 @@ class DrawLoginPage:
         self.draw_text("Create Account", FONT, WHITE, self.create_button.centerx, self.create_button.centery)
 
 class DrawCreateAccountPage:
-    def __init__(self, screen):
+    def __init__(self, screen, page_manager):
         self.screen = screen
         self.username_rect = pygame.Rect(300, 200, 200, 40)
         self.password_rect = pygame.Rect(300, 260, 200, 40)
-
+        self.page_manager = page_manager
         self.active_box = None
         self.username_text = ''
         self.password_text = ''
@@ -119,8 +129,16 @@ class DrawCreateAccountPage:
             else:
                 self.active_box = None
 
+            # CREATE ACCOUNT BUTTON
             if self.create_button.collidepoint(event.pos):
-                print("Add account creation")
+                user = UserData(self.username_text)
+                user.create_account(self.username_text, self.password_text)
+
+                if user.user_id is not None:
+                    print("Account created successfully")
+                    self.page_manager.set_page(DrawMainPage(self.screen, self.page_manager, self.username_text))
+                else:
+                    print("Account creation failed")
 
         if event.type == pygame.KEYDOWN:
             if self.active_box == 'username':
@@ -157,8 +175,8 @@ class DrawCreateAccountPage:
         self.screen.blit(password_surface, (self.password_rect.x + 5, self.password_rect.y + 5))
 
         # Draw buttons
-        pygame.draw.rect(self.screen, DARK_GRAY, self.login_button)
         pygame.draw.rect(self.screen, DARK_GRAY, self.create_button)
+        self.draw_text("Create Account", FONT, WHITE, self.create_button.centerx, self.create_button.centery)
 
         
 class DrawUserPage:
@@ -169,10 +187,103 @@ class DrawUserPage:
         self.user_data = UserData(username)
 
 class DrawGamePage:
-    def __init__(self, screen, game):
+    def __init__(self, screen, page_manager, username, game):
         self.screen = screen
+        self.page_manager = page_manager
+        self.username = username
         self.game = game
+
+        self.data = GameData(game)
+        self.leaderboard = self.data.get_leaderboard()
+
+        self.run_button = pygame.Rect(300, 200, 200, 50)
+        self.back_button = pygame.Rect(300, 270, 200, 50)
+
+    def draw_text(self, text, font, color, x, y):
+        textobj = font.render(text, True, color)
+        textrect = textobj.get_rect(center=(x, y))
+        self.screen.blit(textobj, textrect)
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.run_button.collidepoint(event.pos):
+                instance = RunInstance()
+                instance.run(self.username, self.game)
+
+            if self.back_button.collidepoint(event.pos):
+                self.page_manager.set_page(
+                    DrawMainPage(self.screen, self.page_manager, self.username)
+                )
+
+    def draw(self):
+        self.screen.fill(WHITE)
+
+        # Title
+        self.draw_text(self.game, BIG_FONT, BLACK, WIDTH // 2, 100)
+
+        # Buttons
+        pygame.draw.rect(self.screen, DARK_GRAY, self.run_button)
+        pygame.draw.rect(self.screen, DARK_GRAY, self.back_button)
+
+        self.draw_text("Play", FONT, WHITE, self.run_button.centerx, self.run_button.centery)
+        self.draw_text("Back", FONT, WHITE, self.back_button.centerx, self.back_button.centery)
+
+        # Leaderboard title
+        self.draw_text("Leaderboard", FONT, BLACK, WIDTH // 2, 350)
+
+        # Leaderboard entries
+        y = 400
+        if self.leaderboard:
+            for entry in self.leaderboard:
+                text = str(entry)
+                self.draw_text(text, FONT, BLACK, WIDTH // 2, y)
+                y += 30
+        else:
+            self.draw_text("No scores yet", FONT, BLACK, WIDTH // 2, 400)
 class DrawMainPage:
-    def __init__(self, screen):
+    def __init__(self, screen, page_manager, username):
         self.screen = screen
+        self.page_manager = page_manager
+        self.username = username
+
+        self.games = self.get_games()
+        self.game_buttons = []
+
+        self.create_buttons()
+
+    def get_games(self):
+        games = ArrayList()
+        for name in os.listdir(GAME_PATH):
+            games.append(name)
+        return games
+
+    def create_buttons(self):
+        y = 200
+        for game in self.games:
+            rect = pygame.Rect(300, y, 200, 50)
+            self.game_buttons.append((game, rect))
+            y += 70
+
+    def draw_text(self, text, font, color, x, y):
+        textobj = font.render(text, True, color)
+        textrect = textobj.get_rect(center=(x, y))
+        self.screen.blit(textobj, textrect)
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            for game, rect in self.game_buttons:
+                if rect.collidepoint(event.pos):
+                    self.page_manager.set_page(
+                        DrawGamePage(self.screen, self.page_manager, self.username, game)
+                    )
+
+    def draw(self):
+        self.screen.fill(WHITE)
+
+        self.draw_text("Select a Game", BIG_FONT, BLACK, WIDTH // 2, 100)
+
+        for game, rect in self.game_buttons:
+            pygame.draw.rect(self.screen, DARK_GRAY, rect)
+            self.draw_text(game, FONT, WHITE, rect.centerx, rect.centery)
+    
 

@@ -13,18 +13,17 @@ class GameInstanceManager:
 class RunInstance:
     def __init__(self):
         self.running = False
-        self.game = None
         self.current_instance = None
         self.start_time = None
         self.end_time = None
         self.date = None
-    def run(self, game, username):
+    def run(self, username, game):
         game_file = f"../../games/{game}/code/game/main.py"
         subprocess.Popen(["python", game_file, username])
-        self.game = game
         self.running = True
         self.current_instance = game
         self.start_time = time.time()
+        self.end_time = None
         self.date = date.today()
     def stop(self):
         self.running = False

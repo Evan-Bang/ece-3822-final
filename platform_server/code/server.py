@@ -11,7 +11,7 @@ sys.path.append('../..')
 import leaderboard as lb
 import data_ingest as di
 import accounts as acc
-
+from datastructures.array import ArrayList
 class PlatformServer:
     def __init__(self, host='localhost', port=50074):
         self.host = host
