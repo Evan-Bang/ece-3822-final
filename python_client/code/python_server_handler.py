@@ -3,6 +3,7 @@ from datastructures.hash_table import HashTable
 import json
 from settings import *
 import socket
+import subprocess
 class ServerHandler:
     def __init__(self, server):
         self.server = server
@@ -34,6 +35,9 @@ class ServerHandler:
     def process_request(self, request, client):
         # This method should be overridden by subclasses to handle specific request types
         pass
+    def port_forward(self, username):
+        subprocess.Popen(['ssh', '-L', f'8080:localhost:{SERVER_PORT}', f'{username}@ece-000.eng.temple.edu', '-N'])
+        
 class LoginHandler(ServerHandler):
     def process_request(self, request, client):
         # Handle login request and return response
