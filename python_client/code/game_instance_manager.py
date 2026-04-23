@@ -33,11 +33,11 @@ class RunInstance:
         # self.date = date.today()
     def port_forward(self, game):
         if game == "Surviving 1111":
-            subprocess.Popen(['ssh', '-L', '8000:localhost:80078', f'{self.username}@ece-000.eng.temple.edu', '-N'])
+            subprocess.Popen(['ssh', '-L', '8000:localhost:50078', f'{self.username}@ece-000.eng.temple.edu', '-N'])
         elif game == "Thellusoma":
-            subprocess.Popen(['ssh', '-L', '8000:localhost:80061', f'{self.username}@ece-000.eng.temple.edu', '-N'])
+            subprocess.Popen(['ssh', '-L', '8000:localhost:50061', f'{self.username}@ece-000.eng.temple.edu', '-N'])
         elif game == "Lizzies Adventure":
-            subprocess.Popen(['ssh', '-L', '8000:localhost:80074', f'{self.username}@ece-000.eng.temple.edu', '-N'])
+            subprocess.Popen(['ssh', '-L', '8000:localhost:50074', f'{self.username}@ece-000.eng.temple.edu', '-N'])
     def stop(self):
         self.running = False
         self.current_instance = None
