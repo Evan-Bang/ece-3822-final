@@ -8,3 +8,10 @@ CHAT|owen|t
 CHAT|owen|t
 CHAT|owen|t
 CHAT|owen|Hello
+CHAT|owen|HI
+CHAT|owen|Hi
+CHAT|Not_Owen|Helo
+CHAT|Not_Owen|Hi
+CHAT|Not_Owen|fuck
+CHAT|owen|Hi
+CHAT|owen|Hello!

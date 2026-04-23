@@ -20,6 +20,7 @@ class PlatformServer:
         # Main features:
         self.accounts = acc.AccountManager()
         self.leaderboard = lb.Leaderboard()
+        self.time_lb = lb.Leaderboard()
         self.chat = None # arcade chat Class
         self.games = None # multiplayer game server hosting Class
 
@@ -34,30 +35,38 @@ class PlatformServer:
             await server.serve_forever() # keeps the server running
     
     # Process client requests and provide appropriate responses based on the request type (e.g., login, account creation, leaderboard queries, etc.)
-    async def handle_client(self, reader, writer): # reader and writer are asyncio streams for communication with the client
-        client_socket = writer.get_extra_info('socket') # get the underlying socket object for the client connection
-        self.clients.append(client_socket) # add the incoming client socket to the ArrayList of connected clients
-        print(f'New client connected: {client_socket.getpeername()} at {time.ctime()}') 
+    async def handle_client(self, reader, writer):
+        client_socket = writer.get_extra_info('socket')
+        # SAVE THE NAME HERE while the connection is active
+        addr = writer.get_extra_info('peername') 
+        
+        self.clients.append(client_socket)
+        print(f'New client connected: {addr} at {time.ctime()}') 
 
         while True:
             try:
-                data = await reader.read(1024) # read data from client
+                data = await reader.read(1024)
                 if not data:
                     break
-                message = json.loads(data.decode()) # decode and parse JSON message
-                response = await self.process_message(message) # process the message and generate a response
+                message = json.loads(data.decode())
+                response = await self.process_message(message)
 
                 if response is not None:
-                    writer.write(json.dumps(response).encode()) # send response back to client
-                    await writer.drain() # ensure data is sent
+                    writer.write(json.dumps(response).encode())
+                    await writer.drain()
             
             except Exception as e:
                 print(f'Oops, something broke: {e}')
                 break
-        print(f'Client disconnected: {client_socket.getpeername()} at {time.ctime()}')
-        self.clients.remove(client_socket) # remove the client socket from the list of connected clients
-        writer.close() # close the connection with the client
-        await writer.wait_closed() # wait until the connection is fully closed
+
+        # USE THE SAVED ADDR HERE instead of client_socket.getpeername()
+        print(f'Client disconnected: {addr} at {time.ctime()}')
+        
+        if client_socket in self.clients:
+            self.clients.remove(client_socket)
+            
+        writer.close()
+        await writer.wait_closed()
     
     async def process_message(self, message): # processes incoming client messages and generates appropriate responses
         request_type = message.get('type')
@@ -69,6 +78,23 @@ class PlatformServer:
             success, message = self.accounts.authenticate(username, password) # authenticate the user and return success status and message
             return {'success': success, 'message': message}
         
+        elif request_type == 'game_summary':
+            username = message.get('username')
+            score = message.get('score')
+            playtime = message.get('playtime')
+            game_name = message.get('game_name', 'default_game') # Fallback if not sent
+
+            print(f"Received summary from C++: {username} scored {score}")
+
+            # 1. Update the score leaderboard
+            self.leaderboard.add_score(username, score)
+            
+            # 2. Update the time leaderboard
+            self.time_lb.add_score(username, playtime)
+            print(f"top 5 scores : {self.leaderboard.get_top_n(5)}")
+            print(f"top 5 playtimes: {self.time_lb.get_top_n(5)}")
+            return {'success': True, 'message': 'Summary processed'}
+
         elif request_type == 'create_account':
             username = message.get('username')
             password = message.get('password')
