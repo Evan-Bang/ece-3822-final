@@ -1,9 +1,25 @@
+/*
+server.cpp - Game server with polymorphic serialization
+
+Compile with different serializers:
+  make SERIALIZER=TEXT    (default)
+  make SERIALIZER=JSON
+  make SERIALIZER=BINARY
+
+Run:
+  ./server_text           (for TEXT)
+  ./server_json           (for JSON)
+  ./server_binary         (for BINARY)
+*/
+
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <vector>
 #include <map>
 #include <sstream>
+#include <cstring>
+#include <cstdlib>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -16,6 +32,7 @@
 #include "json_serializer.h"
 #include "binary_serializer.h"
 
+// Compile-time serializer selection
 #ifdef USE_JSON
     #define SERIALIZER_TYPE JSONSerializer
 #elif defined(USE_BINARY)
@@ -28,198 +45,271 @@ class GameServer {
 private:
     int server_socket;
     std::map<int, Player*> players;
-    std::map<int, std::string> recv_buffers;
-
-    Serializer* serializer;
+    Serializer* serializer;  // Polymorphic serializer!
     int next_player_id = 1;
     int port;
-
+    
 public:
     GameServer(int port) : port(port) {
+        // Create serializer based on compile flag
         serializer = new SERIALIZER_TYPE();
-
+        
+        // Create socket
         server_socket = socket(AF_INET, SOCK_STREAM, 0);
-        if (server_socket < 0) exit(1);
-
+        if (server_socket < 0) {
+            std::cerr << "Failed to create socket\n";
+            exit(1);
+        }
+        
+        // Allow reuse of address
         int opt = 1;
         setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-
-        sockaddr_in address{};
+        
+        // Bind to port
+        struct sockaddr_in address;
         address.sin_family = AF_INET;
         address.sin_addr.s_addr = INADDR_ANY;
         address.sin_port = htons(port);
-
-        if (bind(server_socket, (sockaddr*)&address, sizeof(address)) < 0) exit(1);
-        if (listen(server_socket, 10) < 0) exit(1);
-
+        
+        if (bind(server_socket, (struct sockaddr*)&address, sizeof(address)) < 0) {
+            std::cerr << "Failed to bind to port " << port << "\n";
+            std::cerr << "Error: " << strerror(errno) << "\n";
+            exit(1);
+        }
+        
+        // Listen
+        if (listen(server_socket, 10) < 0) {
+            std::cerr << "Failed to listen\n";
+            exit(1);
+        }
+        
+        // Set non-blocking
         fcntl(server_socket, F_SETFL, O_NONBLOCK);
-
-        std::cout << "Server running on port " << port << "\n";
+        
+        std::cout << "======================================\n";
+        std::cout << "Game Server Started\n";
+        std::cout << "======================================\n";
+        std::cout << "Port: " << port << "\n";
         std::cout << "Serializer: " << serializer->getName() << "\n";
+        std::cout << "======================================\n";
     }
-
+    
     ~GameServer() {
-        for (auto& p : players) delete p.second;
+        for (auto& pair : players) {
+            delete pair.second;
+        }
         delete serializer;
         close(server_socket);
     }
+    
+    void parse_update(Player* p, const std::string& line) {
+        // Added this as a seperate function so we can have cleaner message logic
+        std::istringstream ss(line);
+        std::string type, id_str, x_str, y_str, name, char_type, status, score_str;
+        
+        std::getline(ss, type, '|');
+        std::getline(ss, id_str, '|');
+        std::getline(ss, x_str, '|');
+        std::getline(ss, y_str, '|');
+        std::getline(ss, name, '|');
+        std::getline(ss, char_type, '|');
+        std::getline(ss, status, '|');
+        std::getline(ss, score_str);
 
-    void accept_connections() {
-        sockaddr_in client_addr{};
-        socklen_t len = sizeof(client_addr);
-
-        int client_socket = accept(server_socket, (sockaddr*)&client_addr, &len);
-        if (client_socket < 0) return;
-
-        fcntl(client_socket, F_SETFL, O_NONBLOCK);
-
-        int id = next_player_id++;
-        std::string name = "Player" + std::to_string(id);
-
-        players[id] = new Player(id, name, 400, 300, client_socket);
-        recv_buffers[id] = "";
-
-        std::string welcome = "CONNECTED|" + std::to_string(id) + "\n";
-        send(client_socket, welcome.c_str(), welcome.size(), 0);
-
-        std::ifstream file("chat_history.txt");
-        std::string line;
-
-        while (std::getline(file, line)) {
-            if (line.empty()) continue;
-
-            std::istringstream ss(line);
-            std::string n, t;
-
-            std::getline(ss, n, '|');
-            std::getline(ss, t);
-
-            if (n.empty() || t.empty()) continue;
-
-            std::string msg = "CHAT|" + n + "|" + t + "\n";
-            send(client_socket, msg.c_str(), msg.size(), 0);
+        if (!x_str.empty() && !y_str.empty()) {
+            try {
+                p->add_raw_position(std::stof(x_str), std::stof(y_str));
+                Position smoothed = p->get_smoothed_position();
+                p->set_position(smoothed.x, smoothed.y);
+            } catch (...) {}
         }
-
-        std::cout << "Player " << id << " connected\n";
+        if (!name.empty()) p->set_name(name);
+        if (!char_type.empty()) p->set_character_type(char_type);
+        if (!status.empty()) p->set_status(status);
+        
+        // Update Score
+        if (!score_str.empty()) {
+            try {
+                p->set_score(std::stoi(score_str));
+            } catch (...) {}
+        }
     }
 
     void handle_chat(int sender_id, const std::string& line) {
-        std::istringstream ss(line);
-
-        std::string type;
-        std::getline(ss, type, '|');
-        if (type != "CHAT") return;
-
-        std::string name, text;
-        std::getline(ss, name, '|');
-        std::getline(ss, text);
-
-        if (name.empty() || text.empty()) return;
-
-        std::string msg = "CHAT|" + name + "|" + text + "\n";
-
-        for (auto& [id, p] : players) {
-            if (id == sender_id) continue;
-            send(p->get_socket(), msg.c_str(), msg.size(), 0);
+        // 1. Save to history file immediately
+        std::ofstream outfile("chat_history.txt", std::ios::app);
+        if (outfile.is_open()) {
+            outfile << line << "\n";
+            outfile.close();
         }
 
-        std::ofstream file("chat_history.txt", std::ios::app);
-        file << name << "|" << text << "\n";
+        // 2. Broadcast to everyone else
+        std::string msg = line + "\n";
+        for (auto& [id, p] : players) {
+            if (id != sender_id) {
+                send(p->get_socket(), msg.c_str(), msg.size(), 0);
+            }
+        }
+    }
+
+    void accept_connections() {
+        struct sockaddr_in client_addr;
+        socklen_t addr_len = sizeof(client_addr);
+        int client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &addr_len);
+        
+        if (client_socket >= 0) {
+            fcntl(client_socket, F_SETFL, O_NONBLOCK);
+            
+            int player_id = next_player_id++;
+            Player* p = new Player(player_id, "Player" + std::to_string(player_id), 400, 300, client_socket);
+            players[player_id] = p;
+            
+            // 1. Send Connection Confirmation
+            std::string welcome = "CONNECTED|" + std::to_string(player_id) + "\n";
+            send(client_socket, welcome.c_str(), welcome.length(), 0);
+            
+            // 2. Send Chat History
+            std::ifstream history_file("chat_history.txt");
+            std::string history_line;
+            if (history_file.is_open()) {
+                while (std::getline(history_file, history_line)) {
+                    if (history_line.empty()) continue;
+                    std::string msg = history_line + "\n";
+                    send(client_socket, msg.c_str(), msg.size(), 0);
+                }
+                history_file.close();
+            }
+
+            std::cout << "[PLAYER " << player_id << "] Connected and history sent.\n";
+        }
     }
 
     void receive_messages() {
-        char buffer[4096];
-        std::vector<int> dead;
+        std::vector<int> disconnected;
+        
+        for (auto& [id, p] : players) {
+            char buffer[4096];
+            int n = recv(p->get_socket(), buffer, sizeof(buffer) - 1, 0);
+            
+            if (n > 0) {
+                buffer[n] = '\0';
+                std::istringstream stream(buffer);
+                std::string line;
 
-        for (auto& [id, player] : players) {
-            int sock = player->get_socket();
-            int n = recv(sock, buffer, sizeof(buffer) - 1, 0);
+                // This loop is the key: it handles multiple messages in one 'recv'
+                while (std::getline(stream, line)) {
+                    if (line.empty()) continue;
 
-            if (n <= 0) {
-                if (n == 0 || (errno != EAGAIN && errno != EWOULDBLOCK))
-                    dead.push_back(id);
-                continue;
-            }
-
-            buffer[n] = '\0';
-            recv_buffers[id] += buffer;
-
-            std::string& data = recv_buffers[id];
-            size_t pos;
-
-            while ((pos = data.find('\n')) != std::string::npos) {
-                std::string line = data.substr(0, pos);
-                data.erase(0, pos + 1);
-
-                if (line.empty()) continue;
-
-                std::istringstream ss(line);
-                std::string type;
-                std::getline(ss, type, '|');
-
-                if (type == "CHAT") {
-                    handle_chat(id, line);
+                    // Distinguish based on the header string
+                    if (line.substr(0, 6) == "UPDATE") {
+                        parse_update(p, line);
+                    } 
+                    else if (line.substr(0, 4) == "CHAT") {
+                        handle_chat(p->get_id(), line);
+                    }
                 }
-                else if (type == "UPDATE") {
-                    std::string id_s, x_s, y_s, name, ctype, status;
-
-                    std::getline(ss, id_s, '|');
-                    std::getline(ss, x_s, '|');
-                    std::getline(ss, y_s, '|');
-                    std::getline(ss, name, '|');
-                    std::getline(ss, ctype, '|');
-                    std::getline(ss, status);
-
-                    float x = std::stof(x_s);
-                    float y = std::stof(y_s);
-
-                    player->add_raw_position(x, y);
-                    Position smoothed = player->get_smoothed_position();
-
-                    player->set_position(smoothed.x, smoothed.y);
-                    if (!name.empty()) player->set_name(name);
-                    if (!ctype.empty()) player->set_character_type(ctype);
-                    if (!status.empty()) player->set_status(status);
-                }
+            } else if (n == 0 || (n < 0 && errno != EAGAIN && errno != EWOULDBLOCK)) {
+                disconnected.push_back(p->get_id());
             }
         }
+        
+        for (int id : disconnected) {
+            Player* p = players[id];
+            
+            std::cout << "\n" << std::string(30, '-') << "\n";
+            std::cout << "[DISCONNECT] Player Summary\n";
+            std::cout << "  Name:     " << p->get_name() << "\n";
+            std::cout << "  ID:       " << p->get_id() << "\n";
+            std::cout << "  Score:    " << p->get_score() << "\n";
 
-        for (int id : dead) {
-            close(players[id]->get_socket());
-            delete players[id];
+            // Convert seconds to a more readable format (Min:Sec)
+            long total_seconds = p->get_playtime();
+            int minutes = total_seconds / 60;
+            int seconds = total_seconds % 60;
+
+            std::cout << "  Playtime: " << minutes << "m " << seconds << "s\n";
+            std::cout << std::string(30, '-') << "\n\n";
+
+            close(p->get_socket());
+            delete p;
             players.erase(id);
-            recv_buffers.erase(id);
         }
     }
-
+    
     void broadcast_state() {
-        if (players.empty()) return;
-
+        if (players.empty()) {
+            return;
+        }
+        
+        // Build state using serializer!
+        // Format: STATE||<player1_serialized>||<player2_serialized>||...
+        // Using || as separator to avoid conflicts with any serialization format
         std::ostringstream state;
         state << "STATE";
-
-        for (auto& [id, p] : players)
-            state << "||" << serializer->serialize(*p);
-
+        
+        for (auto& pair : players) {
+            Player* p = pair.second;
+            // Use polymorphic serialize()!
+            std::string serialized = serializer->serialize(*p);
+            state << "||" << serialized;
+        }
         state << "\n";
-
+        
         std::string msg = state.str();
-
-        for (auto& [id, p] : players)
-            send(p->get_socket(), msg.c_str(), msg.size(), 0);
+        
+        // Send to all
+        for (auto& pair : players) {
+            Player* p = pair.second;
+            send(p->get_socket(), msg.c_str(), msg.length(), 0);
+        }
     }
-
+    
+    void print_status() {
+        static int counter = 0;
+        counter++;
+        
+        if (counter % 300 == 0) {
+            std::cout << "\n[STATUS] Running... Players: " << players.size() << "\n";
+            for (auto& pair : players) {
+                Player* p = pair.second;
+                std::cout << "  - Player " << p->get_id() << ": " << p->get_name() 
+                          << " at (" << p->get_x() << ", " << p->get_y() << ")\n";
+            }
+        }
+    }
+    
     void run() {
+        std::cout << "\nServer running on port " << port << "\n";
+        std::cout << "Using " << serializer->getName() << " serialization\n";
+        std::cout << "Waiting for clients...\n";
+        std::cout << "Press Ctrl+C to stop.\n\n";
+        
         while (true) {
             accept_connections();
             receive_messages();
             broadcast_state();
-            usleep(16666);
+            print_status();
+            
+            usleep(16666);  // ~60 FPS
         }
     }
 };
 
-int main() {
-    GameServer server(8080);
+int main(int argc, char* argv[]) {
+    int port = 8080;
+    
+    for (int i = 1; i < argc; i++) {
+        std::string arg = argv[i];
+        if (arg == "--port" || arg == "-p") {
+            if (i + 1 < argc) {
+                port = std::atoi(argv[i + 1]);
+                i++;
+            }
+        }
+    }
+    
+    GameServer server(port);
     server.run();
+    
+    return 0;
 }

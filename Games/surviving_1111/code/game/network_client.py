@@ -196,10 +196,10 @@ class NetworkClient:
             print(f"Binary deserialization error: {e}")
             return None
     
-    def send_update(self, x, y, character_type="", status="down"):
+    def send_update(self, x, y, character_type="", status="down",score = 0):
         """Send our position, character type, and status to server"""
         if self.connected and self.my_player_id is not None:
-            msg = f"UPDATE|{self.my_player_id}|{x}|{y}|{self.player_name}|{character_type}|{status}\n"
+            msg = f"UPDATE|{self.my_player_id}|{x}|{y}|{self.player_name}|{character_type}|{status}|{score}\n"
             try:
                 self.sock.send(msg.encode('utf-8'))
             except:

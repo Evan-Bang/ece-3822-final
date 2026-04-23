@@ -295,7 +295,7 @@ class Level:
         # Send our position, character type, and status to server
         character_type = self.player.character_name.lower()
         status = self.player.status.replace("_idle", "").replace("_attack", "")
-        self.network.send_update(self.player.rect.x, self.player.rect.y, character_type, status)
+        self.network.send_update(self.player.rect.x, self.player.rect.y, character_type, status, self.player.exp)
 
         # Get updates from server
         updates = self.network.get_updates()

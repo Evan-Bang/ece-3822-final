@@ -1,13 +1,12 @@
 /*
 player.cpp - Player implementation with switchable buffering strategy
-
-Works with both PositionSmoother and JitterBuffer based on header #define.
-
+Including Score and Playtime tracking.
 */
 
 #include "player.h"
 #include <sys/time.h>
 #include <iostream>
+#include <ctime> // For std::time
 
 // Helper to get current timestamp in milliseconds
 static long get_timestamp_ms() {
@@ -27,12 +26,15 @@ Player::Player() {
     character_type = "";
     status = "down";
     
-    // Initialize buffer based on strategy
+    // SCORE AND TIME LOGIC FOR LEADERBOARDS
+    score = 0;
+    join_time = std::time(nullptr);
+   
     #ifdef USE_POSITION_SMOOTHER
-        buffer = new PositionSmoother(5);  // Buffer size 5
+        buffer = new PositionSmoother(5);
         std::cout << "[BUFFER] Using PositionSmoother (low latency)\n";
     #else
-        buffer = new JitterBuffer(10, 3);  // Capacity 10, min 3
+        buffer = new JitterBuffer(10, 3);
         std::cout << "[BUFFER] Using JitterBuffer (high smoothness)\n";
     #endif
 }
@@ -48,7 +50,11 @@ Player::Player(int id, std::string name, float x, float y, int socket) {
     this->character_type = "";
     this->status = "down";
     
-    // Initialize buffer based on strategy
+    //NEW STATS INITIALIZATION 
+    this->score = 0;
+    this->join_time = std::time(nullptr); 
+
+    
     #ifdef USE_POSITION_SMOOTHER
         buffer = new PositionSmoother(5);
         std::cout << "[BUFFER] Player " << id << " using PositionSmoother\n";
@@ -57,7 +63,6 @@ Player::Player(int id, std::string name, float x, float y, int socket) {
         std::cout << "[BUFFER] Player " << id << " using JitterBuffer\n";
     #endif
     
-    // Add initial position
     buffer->add_position(x, y, get_timestamp_ms());
 }
 
@@ -66,7 +71,25 @@ Player::~Player() {
     delete buffer;
 }
 
-// Getters
+
+int Player::get_score() const { 
+    return score; 
+}
+
+long Player::get_playtime() const { 
+    // Returns difference between "now" and "join time" in seconds
+    return (long)(std::time(nullptr) - join_time); 
+}
+
+void Player::add_score(int points) { 
+    score += points; 
+}
+
+void Player::set_score(int new_score) { 
+    score = new_score; 
+}
+
+
 int Player::get_id() const { return id; }
 std::string Player::get_name() const { return name; }
 float Player::get_x() const { return x; }
@@ -76,7 +99,7 @@ bool Player::is_connected() const { return connected; }
 std::string Player::get_character_type() const { return character_type; }
 std::string Player::get_status() const { return status; }
 
-// Setters
+// --- SETTERS ---
 void Player::set_position(float new_x, float new_y) {
     x = new_x;
     y = new_y;
@@ -102,33 +125,27 @@ void Player::set_status(std::string new_status) {
     status = new_status;
 }
 
-// Add raw network position to buffer
+// Buffer management methods
 void Player::add_raw_position(float new_x, float new_y) {
     buffer->add_position(new_x, new_y, get_timestamp_ms());
 }
 
-// Get smoothed position from buffer
 Position Player::get_smoothed_position() {
     try {
         #ifdef USE_POSITION_SMOOTHER
-            // PositionSmoother: Use weighted average
             return buffer->get_exponential_smooth(0.9f);
         #else
-            // JitterBuffer: Get current playback position
             if (buffer->is_ready()) {
                 return buffer->get_current_position();
             } else {
-                // Still buffering, return current position
                 return Position(x, y);
             }
         #endif
     } catch (...) {
-        // If buffer error, return current position
         return Position(x, y);
     }
 }
 
-// Equality operator
 bool Player::operator==(const Player& other) const {
     return id == other.id;
 }

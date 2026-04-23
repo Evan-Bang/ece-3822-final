@@ -10,7 +10,7 @@ by changing the #define below.
 #define PLAYER_H
 
 #include <string>
-
+#include <ctime> 
 // ============================================
 // BUFFERING STRATEGY (set by Makefile)
 // ============================================
@@ -30,6 +30,8 @@ by changing the #define below.
 class Player {
 private:
     int id;
+    int score = 0;
+    time_t join_time;
     std::string name;
     float x, y;
     int socket;
@@ -43,6 +45,7 @@ private:
 public:
     // Constructors
     Player();
+    
     Player(int id, std::string name, float x, float y, int socket);
     
     // Destructor
@@ -50,6 +53,8 @@ public:
     
     // Getters
     int get_id() const;
+    int get_score() const;
+    long get_playtime() const;
     std::string get_name() const;
     float get_x() const;
     float get_y() const;
@@ -65,6 +70,8 @@ public:
     void set_socket(int sock);
     void set_character_type(std::string type);
     void set_status(std::string new_status);
+    void add_score(int points);
+    void set_score(int new_score);
     
     // Buffer management methods
     void add_raw_position(float new_x, float new_y);
