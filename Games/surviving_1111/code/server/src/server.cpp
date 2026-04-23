@@ -31,6 +31,7 @@ Run:
 #include "text_serializer.h"
 #include "json_serializer.h"
 #include "binary_serializer.h"
+#include "platform_sum.h"
 
 // Compile-time serializer selection
 #ifdef USE_JSON
@@ -229,7 +230,7 @@ public:
 
             std::cout << "  Playtime: " << minutes << "m " << seconds << "s\n";
             std::cout << std::string(30, '-') << "\n\n";
-
+            report_to_python(p->get_name(), p->get_score(), p->get_playtime());
             close(p->get_socket());
             delete p;
             players.erase(id);
