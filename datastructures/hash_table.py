@@ -104,3 +104,9 @@ class HashTable:
         for bucket in old_buckets:
             for key, value in bucket:
                 self.set(key, value)
+    def to_dict(self):
+        # .json requires a python dict object
+        result = {}
+        for key, value in self.items():
+            result[key] = value
+        return result
