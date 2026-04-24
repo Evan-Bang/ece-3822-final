@@ -1,51 +1,148 @@
 """
-Leaderboard manager
-"""
+leaderboard.py
 
-import json
+Author: Owen Ringrose
+Date: 4/23/2026
+
+leaderboard class using BST and Hashtable
+**** Revision History ****
+-4/23/2026: file created
+"""
 import sys
+import json
 sys.path.append('../..')
-from data_ingest import load_leaderboard_data as load_data
 from datastructures.BST import BST
+from datastructures.leaderboard_member import leaderboard_member
+from datastructures.hash_table import HashTable
+from datastructures.array import ArrayList
 
 class Leaderboard:
     """
-    A binary search tree stores (score, username) tuples for each game.
-    The tree is sorted by score, with username as a tiebreaker.
+    A binary search tree stores leaderboard objects as nodes, compared first by score and then userid as tiebreaker
+    Uses a hashmap for constant time acess to an individual's score
     """
     def __init__(self):
-        self.leaderboards = ArrayList() # list of BSTs, one for each game
-        
+        self.score_tree = BST()
+        self.score_table = HashTable() #Score table keyed by uuid
 
-    def update_scores(self, game, username, score):
+    def add_score(self, uuid, score):
         """
-        update scores on the leaderboard for the given game and username
+        Adds a score to the leaderboard
+        If the user is already in leaderboard then check if the new score is higher, if so replace, if not return false
         """
-        pass
-
-    def get_top_scores(self, game,n=10):
-        """
-        return ArrayList of the top n sorted(scores) for the given game using the BST. returns top 10 by default
-        """
-        top_scores = self.leaderboards[game].get_top_n(n)
-        return top_scores
-        
-    def get_player_scores(self, game, username):
-        """
-        return scores for the given game and username
-        """
-        pass
+        # Instantiate object for leaderboard
+        if uuid in self.score_table:
+            prev_score = self.score_table.get(uuid)
+            if score >= prev_score:
+                self.score_table.set(uuid, score)
+                score_object = leaderboard_member(uuid, score)
+                self.score_tree.delete(score_object)
+                self.score_tree.insert(score_object)
+                return True
+            return False
+        else:
+            self.score_table.set(uuid, score)
+            score_object = leaderboard_member(uuid, score)
+            self.score_tree.insert(score_object)
+            return True
     
-    def load_leaderboard(self):
+    def get_top_n(self,n):
         """
-        load the leaderboard data from the json database and populate the BSTs
+        returns the top n players. 
+        returned in tuples as (uuid, score)
         """
-        self.data = load_data()
-        # for each game, create a BST and insert the scores
-        for (game_name, players_table) in self.data:
-            bst = BST()
-            for username in players_table:
-                metric = players_table[username]
-                # insert score and username as a tuple. sort based on score, but username would be tiebreaker
-                bst.insert((metric, username)) 
-            self.leaderboards.append(bst)
+        result = ArrayList()
+        top_n = self.score_tree.get_top_n(n)
+        for l_object in top_n:
+            unpacked = (l_object.uuid, l_object.score)
+            result.append(unpacked)
+        return result
+    
+    def ranged_query(self, bot_score, top_score):
+        """
+        returns the players between a range. 
+        returned in tuples as (uuid, score)
+        """
+        # we have to make fake members for comparisons to work
+        bot_object = leaderboard_member(0, bot_score)
+        top_object = leaderboard_member(0, top_score)
+
+        result = ArrayList()
+        between = self.score_tree.range_query(bot_object, top_object)
+
+        for l_object in between:
+            unpacked = (l_object.uuid, l_object.score)
+            result.append(unpacked)
+        return result
+
+
+    def get_all_sorted(self): 
+        """
+        returns the players sorted low to high
+        returned as a list of tuples as (uuid, score)
+        """
+        result = ArrayList()
+        sorted = self.score_tree.get_elements_sorted()
+        for l_object in sorted:
+            unpacked = (l_object.uuid, l_object.score)
+            result.append(unpacked)
+        return result
+
+    def get_player_score(self, uuid):
+        """
+        returns a given players score
+        """
+        return self.score_table.get(uuid)
+
+
+    def load_from_json(self, file_path):
+        """
+        Loads scores from a JSON file and adds them to the leaderboard.
+        Expected JSON format: {"uuid1": score_1, "uuid2": score_2}
+        """
+        try:
+            with open(file_path, 'r') as f:
+                data = json.load(f)
+            # There is a python built in here but I think its fine as we are calling from library.
+            for uuid, score in data.items():
+                self.add_score(uuid, int(score))
+                
+        except FileNotFoundError:
+            print(f"Error: The file {file_path} was not found.")
+        except json.JSONDecodeError:
+            print(f"Error: Failed to decode JSON from {file_path}.")
+
+
+    def save_to_json(self, file_path):
+        """
+        Saves the current scores to a JSON file using the BST and ArrayList.
+        """
+        try:
+            all_data = self.get_all_sorted()
+            
+            # Build the JSON
+            json_output = "{\n"
+            
+            for i in range(len(all_data)):
+                uuid, score = all_data[i]
+                # Format: "uuid": score
+                line = f'    "{uuid}": {score}'
+                
+                # Add a comma if it's not the last element
+                if i < len(all_data) - 1:
+                    line += ","
+                
+                json_output += line + "\n"
+            
+            json_output += "}"
+
+            with open(file_path, 'w') as f:
+                f.write(json_output)
+                
+            return True
+        except Exception as e:
+            print(f"Error saving: {e}")
+            return False
+
+    def __len__(self):
+        return self.score_table.size()
