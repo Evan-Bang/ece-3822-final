@@ -1,0 +1,237 @@
+{"SAVE":{
+    "1":
+    {
+    "GAME_STATE": {
+        "PLAYER_NAME": "Player",
+        "PLAYER_DESCRIPTION": "The Player Character",
+        "PLAYER_SPRITE": "../../graphics/characters/player/playerportsprite.png",
+        "PLAYER_GAME_SPRITE": "../../graphics/characters/player/playersprite.png",
+        "DIFFICULTY": "NORMAL",
+        "DIFF_MULT": 1,
+        "AREA":"",
+        "X":0,
+        "Y":0,
+        "PLAYER_LEVEL": 1,
+        "PLAYER_STATS": {
+            "STR": 5,
+            "AGL": 5,
+            "END": 5,
+            "INT": 5,
+            "CHR": 5,
+            "CURRENT_HP": 250,
+            "CURRENT_AP": 5
+        },
+        "GENDER": "Male",
+        "GENDERED_NOUNS": {
+            "Subject": "He",
+            "subject": "he",
+            "Object": "Him",
+            "object": "him",
+            "Possessive": "His",
+            "possessive": "his",
+            "Noun": "Man",
+            "noun": "man"
+        },
+        "AB": 1,
+        "STATUS": [
+        ],
+        "ALIVE": true,
+        "PLAYER_EQUIPMENT": {
+            "ARMOR": "CORPORATE_UNIFORM",
+            "WEAPON": "OLD_WORLD_PISTOL"
+        },
+        "INVENTORY": {
+            "AMMO": {
+                "9mm": 50,
+                "Darts": 20,
+                "Battery": 100
+            },
+            "ARMOR": [
+                "CORPORATE_UNIFORM"
+            ],
+            "WEAPONS": [
+                "OLD_WORLD_MACHETE",
+                "OLD_WORLD_PISTOL"
+            ],
+            "CONSUMABLE": {
+                "CYBERDYNAMICS_BEER": 1
+            },
+            "KEY": [
+                "PORTABLE_ATMOSPHERE"
+            ]
+        },
+        "ABILITY": [
+            "Brace",
+            "Aim"
+        ],
+        "HAS_PORT_ATMO": true,
+        "PARTY_NUM": 1,
+        "QUESTS": [],
+        "COMPLETED_QUESTS":[],
+        "ACTIVE_QUEST":"",
+        "REPUTATION":{
+            "CYBERDYNAMICS":50,
+            "REIGNCORP":50,
+            "NEW_PHILADELPHIA":50
+        }
+    }
+},
+    "2":
+        {
+        "GAME_STATE": {
+            "PLAYER_NAME": "Evan Bang",
+            "PLAYER_DESCRIPTION": "The Allmighty",
+            "PLAYER_SPRITE": "../../graphics/characters/player/playerportsprite.png",
+            "PLAYER_GAME_SPRITE": "../../graphics/characters/player/playersprite.png",
+            "DIFFICULTY": "EXTREME",
+            "DIFF_MULT": 3,
+            "AREA":"",
+            "X":0,
+            "Y":0,
+            "PLAYER_LEVEL": 1,
+            "PLAYER_STATS": {
+                "STR": 5,
+                "AGL": 5,
+                "END": 5,
+                "INT": 5,
+                "CHR": 5,
+                "CURRENT_HP": 250,
+                "CURRENT_AP": 5
+            },
+            "GENDER": "Male",
+            "GENDERED_NOUNS": {
+                "Subject": "He",
+                "subject": "he",
+                "Object": "Him",
+                "object": "him",
+                "Possessive": "His",
+                "possessive": "his",
+                "Noun": "Man",
+                "noun": "man"
+            },
+            "AB": 1,
+            "STATUS": [
+            ],
+            "ALIVE": true,
+            "PLAYER_EQUIPMENT": {
+                "ARMOR": "CORPORATE_UNIFORM",
+                "WEAPON": "OLD_WORLD_PISTOL"
+            },
+            "INVENTORY": {
+                "AMMO": {
+                    "9mm": 100,
+                    "Darts": 100,
+                    "Battery": 100
+                },
+                "ARMOR": [
+                    "CORPORATE_UNIFORM",
+                    "SUPERCOOLED_ARMOR"
+                ],
+                "WEAPONS": [
+                    "OLD_WORLD_MACHETE",
+                    "OLD_WORLD_PISTOL",
+                    "PARTICLE-BEAM"
+                ],
+                "CONSUMABLE": {
+                    "CYBERDYNAMICS_BEER": 1,
+                    "DISTILLED_WATER": 100
+                },
+                "KEY": [
+                    "PORTABLE_ATMOSPHERE"
+                ]
+            },
+            "ABILITY": [
+                "Brace",
+                "Aim"
+            ],
+            "HAS_PORT_ATMO": true,
+            "PARTY_NUM": 1,
+            "QUESTS": [],
+            "COMPLETED_QUESTS":[],
+            "ACTIVE_QUEST":"",
+            "REPUTATION":{
+                "CYBERDYNAMICS":50,
+                "REIGNCORP":50,
+                "NEW_PHILADELPHIA":50
+            }
+        }
+},
+    "3":
+        {
+        "GAME_STATE": {
+            "PLAYER_NAME": "Player",
+            "PLAYER_DESCRIPTION": "The Player Character",
+            "PLAYER_SPRITE": "../../graphics/characters/player/playerportsprite.png",
+            "PLAYER_GAME_SPRITE": "../../graphics/characters/player/playersprite.png",
+            "DIFFICULTY": "NORMAL",
+            "DIFF_MULT": 1,
+            "AREA":"",
+            "X":0,
+            "Y":0,
+            "PLAYER_LEVEL": 1,
+            "PLAYER_STATS": {
+                "STR": 5,
+                "AGL": 5,
+                "END": 5,
+                "INT": 5,
+                "CHR": 5,
+                "CURRENT_HP": 250,
+                "CURRENT_AP": 5
+            },
+            "GENDER": "Male",
+            "GENDERED_NOUNS": {
+                "Subject": "He",
+                "subject": "he",
+                "Object": "Him",
+                "object": "him",
+                "Possessive": "His",
+                "possessive": "his",
+                "Noun": "Man",
+                "noun": "man"
+            },
+            "AB": 1,
+            "STATUS": [
+            ],
+            "ALIVE": true,
+            "PLAYER_EQUIPMENT": {
+                "ARMOR": "CORPORATE_UNIFORM",
+                "WEAPON": "OLD_WORLD_PISTOL"
+            },
+            "INVENTORY": {
+                "AMMO": {
+                    "9mm": 100,
+                    "Darts": 100,
+                    "Battery": 100
+                },
+                "ARMOR": [
+                    "CORPORATE_UNIFORM"
+                ],
+                "WEAPONS": [
+                    "OLD_WORLD_MACHETE",
+                    "OLD_WORLD_PISTOL"
+                ],
+                "CONSUMABLE": {
+                    "CYBERDYNAMICS_BEER": 1
+                },
+                "KEY": [
+                    "PORTABLE_ATMOSPHERE"
+                ]
+            },
+            "ABILITY": [
+                "Brace",
+                "Aim"
+            ],
+            "HAS_PORT_ATMO": true,
+            "PARTY_NUM": 1,
+            "QUESTS": [],
+            "COMPLETED_QUESTS":[],
+            "ACTIVE_QUEST":"",
+            "REPUTATION":{
+                "CYBERDYNAMICS":50,
+                "REIGNCORP":50,
+                "NEW_PHILADELPHIA":50
+            }
+    }
+}
+}
+}
