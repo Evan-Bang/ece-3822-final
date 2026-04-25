@@ -18,6 +18,8 @@ from datastructures.patrol_path import PatrolPath
 import sys
 from subcharacter import Player
 from map_loader import load_layer
+from chat import ChatUI
+
 class Level:
     def __init__(self, player_name, save_slot, server_host='localhost', server_port=8080, serializer='text', clock=None):
         # Get the display surface
@@ -70,6 +72,12 @@ class Level:
 
         # Debug mode for showing enemy paths
         self.show_enemy_debug = False
+
+        # Chat stuff
+        sw = self.display_surface.get_width()
+        sh = self.display_surface.get_height()
+        self.chat_ui = ChatUI(player_name, sw, sh)
+        self.chat_ui.add_system_message("Press Enter to open chat.")
 
     def _load_gid_map(self, tmx_path):
         """Parse a Tiled .tmx file and return a global GID -> Surface dict.
@@ -361,10 +369,20 @@ class Level:
 
             self.player.other_players = list(self.other_players.values())
 
+            for chat in self.network.get_chat_messages():
+                self.chat_ui.add_message(chat['name'], chat['text'])
+                print(chat)
+
     def handle_events(self, events):
         """Handle pygame events (pass from main game loop)"""
         for event in events:
-            self.inventory_ui.handle_event(event, self.player)
+            if not self.chat_ui.active:
+                self.inventory_ui.handle_event(event, self.player)
+
+            if not self.inventory_ui.active:
+                msg = self.chat_ui.handle_event(event)
+                if msg:
+                    self.network.send_chat(msg)
 
     def draw_names(self):
         """Draw player names above their heads"""
@@ -543,6 +561,8 @@ class Level:
 
         if self.inventory_ui.active:
             self.inventory_ui.draw(self.display_surface)
+        self.chat_ui.draw(self.display_surface)
+
 
     # ------------------------------------------------------------------
     # Enemy debug
