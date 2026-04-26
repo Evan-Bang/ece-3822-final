@@ -35,7 +35,7 @@ def get_port_mapping(file_path):
 
 def launch_manager():
     base_dir = "Games"
-    ports_file = "Ports.txt"
+    ports_file = "ports.txt"
     server_bin = os.path.abspath(os.path.join("game_server", "server_text_smoother"))
     
     # Use ArrayList to track running background processes
@@ -68,7 +68,7 @@ def launch_manager():
                         print(f"Launching server: {folder} on port {port}")
                         proc = subprocess.Popen(
                             [server_bin, "--port", port], 
-                            cwd=full_path,
+                            cwd="game_server",
                             stdout=output_dest,
                             stderr=output_dest
                         )

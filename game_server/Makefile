@@ -29,7 +29,6 @@ else ifeq ($(SERIALIZER), BINARY)
     CXXFLAGS += -DUSE_BINARY
     SER_SUFFIX = _binary
 else
-    # Default to TEXT (no flag needed)
     SER_SUFFIX = _text
 endif
 
@@ -42,129 +41,73 @@ ifeq ($(BUFFER), JITTER)
     CXXFLAGS += -DUSE_JITTER_BUFFER
     BUF_SUFFIX = _jitter
 else
-    # Default to PositionSmoother
     CXXFLAGS += -DUSE_POSITION_SMOOTHER
     BUF_SUFFIX = _smoother
 endif
 
-# Combined suffix for executable name
 SUFFIX = $(SER_SUFFIX)$(BUF_SUFFIX)
 
-# Source and object directories (serializer+buffer-specific objects)
 SRC_DIR = src
 INC_DIR = include
 OBJ_DIR = obj$(SUFFIX)
 
-# Create obj directory if it doesn't exist
 $(shell mkdir -p $(OBJ_DIR))
 
-# Server object files
-# ADDED $(OBJ_DIR)/platform_sum.o here
+# Server object files - ADDED bloom_filter.o HERE
 SERVER_OBJS = $(OBJ_DIR)/player.o $(OBJ_DIR)/text_serializer.o \
               $(OBJ_DIR)/json_serializer.o $(OBJ_DIR)/binary_serializer.o \
-              $(OBJ_DIR)/platform_sum.o
+              $(OBJ_DIR)/platform_sum.o $(OBJ_DIR)/bloom_filter.o
 
-# Buffer object files (shared between server and tests)
+# Buffer object files
 BUFFER_OBJS = $(OBJ_DIR)/position_smoother.o $(OBJ_DIR)/jitter_buffer.o
 
-# Default target - build server
+# Default target
 server: server$(SUFFIX)
 
-# Build everything
 all: server$(SUFFIX) test_buffers
 
-# Link server with buffers
+# Link server
 server$(SUFFIX): $(SRC_DIR)/server.cpp $(SERVER_OBJS) $(BUFFER_OBJS)
 	$(CXX) $(CXXFLAGS) -o server$(SUFFIX) $(SRC_DIR)/server.cpp $(SERVER_OBJS) $(BUFFER_OBJS)
-	@echo ""
-	@echo "===================================="
-	@echo "Server compiled successfully!"
-	@echo "===================================="
-	@echo "Serializer: $(SERIALIZER)"
-	@echo "Buffer:     $(BUFFER)"
-	@echo "Executable: server$(SUFFIX)"
-	@echo ""
-	@echo "Run with:"
-	@echo "  ./server$(SUFFIX)"
-	@echo "  ./server$(SUFFIX) --port 8005"
-	@echo "===================================="
-	@echo ""
+	@echo "Server compiled successfully: server$(SUFFIX)"
 
-# Build test program (no serializer dependency, buffer-specific)
-test_buffers: $(SRC_DIR)/test_buffers.cpp $(BUFFER_OBJS) $(INC_DIR)/circular_buffer.h $(INC_DIR)/position_smoother.h $(INC_DIR)/jitter_buffer.h
+test_buffers: $(SRC_DIR)/test_buffers.cpp $(BUFFER_OBJS)
 	$(CXX) $(CXXFLAGS) -o test_buffers $(SRC_DIR)/test_buffers.cpp $(BUFFER_OBJS)
-	@echo ""
-	@echo "===================================="
-	@echo "Buffer tests compiled successfully!"
-	@echo "===================================="
-	@echo "Run with: ./test_buffers"
-	@echo "===================================="
-	@echo ""
 
-# Run buffer tests
 test: test_buffers
 	./test_buffers
 
-# Compile server object files
+# --- Compilation Rules ---
+
 $(OBJ_DIR)/player.o: $(SRC_DIR)/player.cpp $(INC_DIR)/player.h
 	$(CXX) $(CXXFLAGS) -c $(SRC_DIR)/player.cpp -o $(OBJ_DIR)/player.o
 
-$(OBJ_DIR)/text_serializer.o: $(SRC_DIR)/text_serializer.cpp $(INC_DIR)/text_serializer.h $(INC_DIR)/serializer.h $(INC_DIR)/player.h
+$(OBJ_DIR)/text_serializer.o: $(SRC_DIR)/text_serializer.cpp $(INC_DIR)/text_serializer.h
 	$(CXX) $(CXXFLAGS) -c $(SRC_DIR)/text_serializer.cpp -o $(OBJ_DIR)/text_serializer.o
 
-$(OBJ_DIR)/json_serializer.o: $(SRC_DIR)/json_serializer.cpp $(INC_DIR)/json_serializer.h $(INC_DIR)/serializer.h $(INC_DIR)/player.h
+$(OBJ_DIR)/json_serializer.o: $(SRC_DIR)/json_serializer.cpp $(INC_DIR)/json_serializer.h
 	$(CXX) $(CXXFLAGS) -c $(SRC_DIR)/json_serializer.cpp -o $(OBJ_DIR)/json_serializer.o
 
-$(OBJ_DIR)/binary_serializer.o: $(SRC_DIR)/binary_serializer.cpp $(INC_DIR)/binary_serializer.h $(INC_DIR)/serializer.h $(INC_DIR)/player.h
+$(OBJ_DIR)/binary_serializer.o: $(SRC_DIR)/binary_serializer.cpp $(INC_DIR)/binary_serializer.h
 	$(CXX) $(CXXFLAGS) -c $(SRC_DIR)/binary_serializer.cpp -o $(OBJ_DIR)/binary_serializer.o
 
-# NEW: Compile the platform summary reporter object
 $(OBJ_DIR)/platform_sum.o: $(SRC_DIR)/platform_sum.cpp $(INC_DIR)/platform_sum.h
 	$(CXX) $(CXXFLAGS) -c $(SRC_DIR)/platform_sum.cpp -o $(OBJ_DIR)/platform_sum.o
 
-# Compile buffer object files
-$(OBJ_DIR)/position_smoother.o: $(SRC_DIR)/position_smoother.cpp $(INC_DIR)/position_smoother.h $(INC_DIR)/circular_buffer.h
+# NEW: Rule for Bloom Filter
+$(OBJ_DIR)/bloom_filter.o: $(SRC_DIR)/bloom_filter.cpp $(INC_DIR)/bloom_filter.h
+	$(CXX) $(CXXFLAGS) -c $(SRC_DIR)/bloom_filter.cpp -o $(OBJ_DIR)/bloom_filter.o
+
+$(OBJ_DIR)/position_smoother.o: $(SRC_DIR)/position_smoother.cpp $(INC_DIR)/position_smoother.h
 	$(CXX) $(CXXFLAGS) -c $(SRC_DIR)/position_smoother.cpp -o $(OBJ_DIR)/position_smoother.o
 
-$(OBJ_DIR)/jitter_buffer.o: $(SRC_DIR)/jitter_buffer.cpp $(INC_DIR)/jitter_buffer.h $(INC_DIR)/circular_buffer.h
+$(OBJ_DIR)/jitter_buffer.o: $(SRC_DIR)/jitter_buffer.cpp $(INC_DIR)/jitter_buffer.h
 	$(CXX) $(CXXFLAGS) -c $(SRC_DIR)/jitter_buffer.cpp -o $(OBJ_DIR)/jitter_buffer.o
 
-# Clean up
 clean:
 	rm -rf obj_* server_* test_buffers
-	@echo "Cleaned up all compiled files and object directories"
 
-# Help target
 help:
-	@echo "=========================================="
-	@echo "Project 2 Makefile - Available Options"
-	@echo "=========================================="
-	@echo ""
-	@echo "SERIALIZER options:"
-	@echo "  TEXT    - Text serialization (human-readable)"
-	@echo "  JSON    - JSON serialization"
-	@echo "  BINARY  - Binary serialization (compact)"
-	@echo ""
-	@echo "BUFFER options:"
-	@echo "  SMOOTHER - PositionSmoother (low latency, good smoothness)"
-	@echo "  JITTER   - JitterBuffer (high latency, perfect smoothness)"
-	@echo ""
-	@echo "Examples:"
-	@echo "  make                                    # Defaults (TEXT + SMOOTHER)"
-	@echo "  make SERIALIZER=JSON                    # JSON + SMOOTHER"
-	@echo "  make BUFFER=JITTER                      # TEXT + JITTER"
-	@echo "  make SERIALIZER=BINARY BUFFER=JITTER    # BINARY + JITTER"
-	@echo "  make test                               # Run buffer tests"
-	@echo "  make clean                              # Remove all compiled files"
-	@echo ""
-	@echo "All combinations:"
-	@echo "  server_text_smoother     - TEXT + PositionSmoother"
-	@echo "  server_text_jitter       - TEXT + JitterBuffer"
-	@echo "  server_json_smoother     - JSON + PositionSmoother"
-	@echo "  server_json_jitter       - JSON + JitterBuffer"
-	@echo "  server_binary_smoother   - BINARY + PositionSmoother"
-	@echo "  server_binary_jitter     - BINARY + JitterBuffer"
-	@echo "=========================================="
+	@echo "Usage: make SERIALIZER=[TEXT|JSON|BINARY] BUFFER=[SMOOTHER|JITTER]"
 
-# Phony targets
 .PHONY: all server test clean help

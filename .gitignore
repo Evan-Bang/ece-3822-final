@@ -11,3 +11,6 @@ Games/surviving_1111/code/server/obj_text_smoother/binary_serializer.o
 Games/surviving_1111/code/server/server_text_smoother
 Games/surviving_1111/code/server/chat_history.txt
 Games/surviving_1111/code/server/chat_history.txt
+game_server/chat_history.txt
+game_server/surviving_1111_chat_history.txt
+.gitignore

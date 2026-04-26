@@ -264,7 +264,7 @@ class ChatUI:
         if not text:
             return None
         # Echo locally so sender sees their own message immediately
-        self._push(ChatMessage(self.player_name, text, COL_SELF))
+        #self._push(ChatMessage(self.player_name, text, COL_SELF))
         return text
 
     def _truncate(self, text: str, max_px: int) -> str:
