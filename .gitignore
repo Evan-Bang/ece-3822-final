@@ -14,3 +14,5 @@ Games/surviving_1111/code/server/chat_history.txt
 game_server/chat_history.txt
 game_server/surviving_1111_chat_history.txt
 .gitignore
+/platform_server/code/__pycache__
+/platform_server/code/tests/__pycache__
