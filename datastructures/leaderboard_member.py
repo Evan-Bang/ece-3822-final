@@ -25,7 +25,7 @@ class leaderboard_member:
         return self._uuid
     
     def __eq__(self, other):
-        return (self.uuid == other.uuid)
+        return (self.uuid == other.uuid and self.score == other.score)
     
     def __lt__(self, other):
         if self.score < other.score:

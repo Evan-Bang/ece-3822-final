@@ -34,9 +34,9 @@ class Leaderboard:
         if uuid in self.score_table:
             prev_score = self.score_table.get(uuid)
             if score >= prev_score:
+                self.score_tree.delete(leaderboard_member(uuid, prev_score))
                 self.score_table.set(uuid, score)
                 score_object = leaderboard_member(uuid, score)
-                self.score_tree.delete(score_object)
                 self.score_tree.insert(score_object)
                 return True
             return False
@@ -44,6 +44,7 @@ class Leaderboard:
             self.score_table.set(uuid, score)
             score_object = leaderboard_member(uuid, score)
             self.score_tree.insert(score_object)
+        
             return True
     
     def get_top_n(self,n):
