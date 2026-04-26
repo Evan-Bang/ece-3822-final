@@ -68,7 +68,8 @@ class game_server_launcher:
         for game in self.games:
             proc = subprocess.Popen(
                             [self.server_bin, "--port", self.ports.get(game), "-n", game],
-                            stdout=output_dest)
+                            stdout=output_dest
+                            cwd=../../game_server)
             self.procesess.append(proc)
 
     def stop_servers(self):
