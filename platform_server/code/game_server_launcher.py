@@ -70,7 +70,8 @@ class game_server_launcher:
         for game in self.games:
           proc = subprocess.Popen(
             [self.server_bin, "--port", self.ports.get(game), "-n", game],
-            cwd=os.path.dirname(os.path.abspath(self.server_bin))
+            cwd=os.path.dirname(os.path.abspath(self.server_bin)),
+            stdout=output_dest
             )
         self.procesess.append(proc)
 
@@ -82,16 +83,3 @@ class game_server_launcher:
                 proc.terminate()
 
         
-
-
-
-## TESTING REMOVE THIS LATER
-gsl = game_server_launcher(
-    os.path.join(SCRIPT_DIR, "../../Games"),
-    os.path.join(SCRIPT_DIR, "../../game_server/server_text_smoother"),
-    os.path.join(SCRIPT_DIR, "../../ports.txt")
-)
-gsl.launch_servers()
-print(gsl.games)
-time.sleep(10)
-gsl.stop_servers()
