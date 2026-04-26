@@ -15,6 +15,8 @@ import time
 sys.path.append('../..')
 from datastructures.array import ArrayList
 from datastructures.hash_table import HashTable
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 
 class game_server_launcher:
     """
@@ -66,11 +68,11 @@ class game_server_launcher:
         if not os.path.exists(self.server_bin):
             raise FileNotFoundError
         for game in self.games:
-            proc = subprocess.Popen(
-                            [self.server_bin, "--port", self.ports.get(game), "-n", game],
-                            stdout=output_dest
-                            cwd=../../game_server)
-            self.procesess.append(proc)
+          proc = subprocess.Popen(
+            [self.server_bin, "--port", self.ports.get(game), "-n", game],
+            cwd=os.path.dirname(os.path.abspath(self.server_bin))
+            )
+        self.procesess.append(proc)
 
     def stop_servers(self):
          """
@@ -83,8 +85,12 @@ class game_server_launcher:
 
 
 
-
-gsl = game_server_launcher("../../Games", "../../game_server/server_text_smoother", "../../ports.txt")
+## TESTING REMOVE THIS LATER
+gsl = game_server_launcher(
+    os.path.join(SCRIPT_DIR, "../../Games"),
+    os.path.join(SCRIPT_DIR, "../../game_server/server_text_smoother"),
+    os.path.join(SCRIPT_DIR, "../../ports.txt")
+)
 gsl.launch_servers()
 print(gsl.games)
 time.sleep(10)
