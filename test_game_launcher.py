@@ -70,7 +70,7 @@ def setup_ssh_tunnels(port_map, user_name, ssh_host, running_tunnels, suppress_o
     time.sleep(1)
 
 def launch_manager():
-    base_dir = "Games"
+    base_dir = "games"
     ports_file = "ports.txt"
     server_bin = os.path.abspath(os.path.join("game_server", "server_text_smoother"))
     ssh_host = "ece-000.eng.temple.edu"

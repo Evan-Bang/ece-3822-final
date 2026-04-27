@@ -25,7 +25,7 @@ class PlatformServer:
         self.host = host
         self.port = port
 
-        games_dir = ROOT / "Games"
+        games_dir = ROOT / "games"
         server_bin = ROOT / "game_server" / "server_text_smoother"
         ports_file = ROOT / "ports.txt"
 
