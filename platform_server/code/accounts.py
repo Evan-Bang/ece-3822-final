@@ -12,36 +12,92 @@ import hashlib
 import json
 import random
 class Profile:
-    def __init__(self, username):
+    def __init__(self, username, user_id_table):
         self.username = username
         self.sessions = ArrayList()
+        if username not in user_id_table:
+            raise ValueError("User does not exist")
+        else:
+            self.user_id = user_id_table.get(username)
+        self.data_file = f'../../user_data/{self.user_id}.json'
+        self.next_session_id = 1
+        self.password = None
+        self.initialize_data()
     def add_session(self, session):
         self.sessions.append(session)
     def create_session(self, game, time_played, score):
-        session = Session(game, self.username, time_played, score)
+        session = Session(game, self.username, time_played, score, self.next_session_id)
         self.add_session(session)
+        self.next_session_id += 1
+        return session
     def build_session(self, summary):
-        game = summary('game')
-        time_played = summary('playtime')
-        score = summary('score')
+        game = summary['game']
+        time_played = summary['playtime']
+        score = summary['score']
         session = self.create_session(game,time_played,score)
         return session
-        
+    def initialize_data(self):
+        # Load user data from file or create new file if it doesn't exist
+        if self.user_id:
+            self.data_file = f"../../user_data/{self.user_id}.json"
+            try:
+                with open(self.data_file, 'r') as f:
+                    data = json.load(f)
+                    id = 0
+                    for session in data['GAME_HISTORY'].values():
+                        session_data = Session(
+                            session['GAME'],
+                            self.username,
+                            session['PLAYTIME'],
+                            session['SCORE'],
+                            id
+                        )
+                        session_data.id = id
+                        id += 1
+                        self.next_session_id += 1
+                        session_data.game = session['GAME']
+                        session_data.time_played = session['PLAYTIME']
+                        session_data.score = session['SCORE']
+                        self.sessions.append(session_data)
+                    self.password = data['PASSWORD_HASH']
+            except FileNotFoundError:
+                if self.user_id is not None:
+                    self.save_data()   
+    def save_data(self):
+        # save user data to file
+        data = {}
+        sessions = {}
+        for session_data in self.sessions:
+            sessions[f'SESSION_{session_data.id}'] = session_data.encode()
+        data['USERNAME'] = self.username
+        data['PASSWORD_HASH'] = self.password
+        data['GAME_HISTORY'] = sessions
+        with open(self.data_file, 'w') as f:
+            json.dump(data, f)
 class Session:
-    def __init__(self, game, username, time_played, score):
+    def __init__(self, game, username, time_played, score, id):
         self.game = game
         self.username = username
         self.time_played = time_played
         self.score = score
+        self.id = id
     def encode(self):
-        session = {"game":self.game,"username":self.username,"time_played":self.time_played,"score":self.score}
+        session = {"GAME":self.game,"USERNAME":self.username,"PLAYTIME":self.time_played,"SCORE":self.score}
         return session
 class AccountManager:
     def __init__(self):
         self.players = ArrayList()
         self.usernames = ArrayList()
         self.accounts = HashTable()
-        self.ids = ArrayList()
+        self.ids = HashTable()
+        try:
+            with open("../../user_data/name_id.json", "r") as f:
+                data = json.load(f)
+                for username, user_id in data.items():
+                    self.ids.set(username, user_id)
+                    self.usernames.append(username)
+        except FileNotFoundError:
+            pass
     def create_account(self, username, password):
         """
         Create a new account with the given username and password
@@ -49,7 +105,7 @@ class AccountManager:
          - If not, create a new Player and add to the list of players
          - If account was created successfully, return True, else False
         """
-        if username not in self.players:
+        if username not in self.usernames:
             # Generate salt
             self.usernames.append(username)
             salt = os.urandom(16)
@@ -64,8 +120,8 @@ class AccountManager:
                     i += 1
                     if i >= 100000:
                         return False
-            self.accounts.set(username, Profile(username))
-            self.ids.append(user_id)
+            self.ids.set(username, user_id)
+            self.accounts.set(username, Profile(username, self.ids))
             data_file = f"../../user_data/{user_id}.json"
             # Hash password
             hashed = hashlib.sha256(salt + password.encode()).hexdigest()
@@ -76,11 +132,7 @@ class AccountManager:
             user_data = {
                 "USERNAME": username,
                 "PASSWORD_HASH": password_storage,
-                "GAME_DATA": {
-                    "SURVIVING_1111": {"PLAY_TIME": "", "SESSIONS": {}, "SCORE": ""},
-                    "THELLUSOMA": {"PLAY_TIME": "", "SESSIONS": {}, "SCORE": ""},
-                    "LIZZIES_ADVENTURE": {"PLAY_TIME": "", "SESSIONS": {}, "SCORE": ""}
-                }
+                "GAME_HISTORY": {}
             }
             with open("../../user_data/name_id.json","r") as d:
                 data = json.load(d)
@@ -89,7 +141,7 @@ class AccountManager:
                 json.dump(data, w, indent=4)
             with open(data_file, "w") as f:
                 json.dump(user_data, f, indent=4)
-            return True
+            return Profile(username, self.ids)
         else:
             return False
 
@@ -101,7 +153,10 @@ class AccountManager:
         """
         with open("../../user_data/name_id.json","r") as d:
             name_id_data = json.load(d)
-        user_id = name_id_data[username]
+        if username not in name_id_data:
+            return False
+        else:
+            user_id = name_id_data[username]
         data_file = f"../../user_data/{user_id}.json"
         with open(data_file, "r") as f:
             user_data = json.load(f)
@@ -115,14 +170,20 @@ class AccountManager:
         new_hash = hashlib.sha256(salt + password.encode()).hexdigest()
 
         if new_hash == stored_hash:
-            return True
+            return Profile(username, self.ids)
         else:
             return False
 
 if __name__ == "__main__":
-    username = "tut69764"
+    username = "tuq10172"
     password = "nullptr"
     manager = AccountManager()
-    login = manager.authenticate(username,password)
-    if login:
+    account = manager.authenticate(username,password)
+    if account:
         print("login")
+    account.build_session({'game':'Thellusoma','playtime':'500','score':'69696969'})
+    account.build_session({'game':'Surviving 1111','playtime':'0.001','score':'2'})
+    print(account.sessions)
+    account.save_data()
+
+    
