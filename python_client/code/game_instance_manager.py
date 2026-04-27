@@ -14,7 +14,7 @@ class GameInstanceManager:
     def remove_instance(self, instance):
         self.instances.remove(instance)
 class RunInstance:
-    def __init__(self, username, game):
+    def __init__(self, username):
         self.running = False
         self.current_instance = None
         self.singleplayer = True
@@ -33,10 +33,10 @@ class RunInstance:
         game_file = f"../../games/{self.current_instance}/code/game/main.py"
         self.assigned_port = self.get_assigned_port()
         if self.singleplayer:
-            subprocess.Popen(["python", game_file, self.username])
+            subprocess.Popen(["python3", game_file, self.username])
         else:
             self.port_forward(self.current_instance)
-            subprocess.Popen(["python", game_file, self.username, '--port', '8000'])
+            subprocess.Popen(["python3", game_file, self.username, '--port', '8000'])
         self.running = True
         
         # self.start_time = time.time()

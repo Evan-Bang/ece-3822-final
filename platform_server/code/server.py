@@ -106,7 +106,17 @@ class PlatformServer:
             game_name = message.get('game_name')
             leaderboard_data = self.leaderboard.get_leaderboard(game_name)
             return {'success': True, 'leaderboard': leaderboard_data}
-        
+        # get sessions
+        elif request_type == 'get_sessions':
+            username = message.get('username')
+            account = self.accounts.accounts.get(username)
+            for session in account.sessions:
+                yield session.encode()
+        # build session from game summary
+        elif request_type == 'game_summary':
+            username = message.get('username')
+            account = self.accounts.accounts.get(username)
+            account.build_session(message)
         # Chat
 
         # Game hosting

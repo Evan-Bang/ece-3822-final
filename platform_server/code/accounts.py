@@ -12,14 +12,35 @@ import hashlib
 import json
 import random
 class Profile:
-    def __init__(self, username, password):
+    def __init__(self, username):
         self.username = username
-        self.password = password
-
+        self.sessions = ArrayList()
+    def add_session(self, session):
+        self.sessions.append(session)
+    def create_session(self, game, time_played, score):
+        session = Session(game, self.username, time_played, score)
+        self.add_session(session)
+    def build_session(self, summary):
+        game = summary('game')
+        time_played = summary('playtime')
+        score = summary('score')
+        session = self.create_session(game,time_played,score)
+        return session
+        
+class Session:
+    def __init__(self, game, username, time_played, score):
+        self.game = game
+        self.username = username
+        self.time_played = time_played
+        self.score = score
+    def encode(self):
+        session = {"game":self.game,"username":self.username,"time_played":self.time_played,"score":self.score}
+        return session
 class AccountManager:
     def __init__(self):
         self.players = ArrayList()
         self.usernames = ArrayList()
+        self.accounts = HashTable()
         self.ids = ArrayList()
     def create_account(self, username, password):
         """
@@ -43,6 +64,7 @@ class AccountManager:
                     i += 1
                     if i >= 100000:
                         return False
+            self.accounts.set(username, Profile(username))
             self.ids.append(user_id)
             data_file = f"../../user_data/{user_id}.json"
             # Hash password
@@ -97,3 +119,10 @@ class AccountManager:
         else:
             return False
 
+if __name__ == "__main__":
+    username = "tut69764"
+    password = "nullptr"
+    manager = AccountManager()
+    login = manager.authenticate(username,password)
+    if login:
+        print("login")
