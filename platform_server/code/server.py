@@ -101,10 +101,10 @@ class PlatformServer:
 
             print(f"Received summary from C++: {username} scored {score} in {game_name}")
 
-            # 1. Update the score leaderboard
+            # Update the score leaderboard
             self.gm.add_score_lb(game_name, score, username)
             
-            # 2. Update the time leaderboard
+            # Update the time leaderboard
             self.gm.add_time_lb(game_name, playtime, username)
 
             # This is just for debugging
