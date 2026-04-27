@@ -1,7 +1,9 @@
 datastructures/__pycache__/
 game_server/surviving_1111_chat_history.txt
-Games/thellusoma/code/game/__pycache__/
-Games/thellusoma/code/game/datastructures/__pycache__/
+games/thellusoma/code/game/__pycache__/
+games/thellusoma/code/game/datastructures/__pycache__/
 game_server/server_text_smoother
 platform_server/code/__pycache__/
 
+games/surviving_1111/code/game/__pycache__/
+games/surviving_1111/code/game/datastructures/__pycache__/
