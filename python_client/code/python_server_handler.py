@@ -56,25 +56,14 @@ class UserData:
         self.data_file = None
         self.logged_in = False
 
-        
-
-    def initialize_data(self):
-        # Load user data from file or create new file if it doesn't exist
-        self.data_file = f"userdata/{self.user_id}.json"
-        try:
-            with open(self.data_file, 'r') as f:
-                data = json.load(f)
-                self.game_history = ArrayList(data.get('game_history', []))
-        except FileNotFoundError:
-            if self.user_id is not None:
-                self.save_data()
     def create_account(self, username, password):
+        self.handler.connect(username)
         request = HashTable()
         request.set('type', 'create_account')
         request.set('username', username)
         request.set('password', password)
-        
-        pass
+        response = self.handler.process_request(request)
+        return response
     def login(self, username, password):
         self.handler.connect(username)
         request = HashTable()
@@ -85,14 +74,13 @@ class UserData:
         if response:
             self.logged_in = response.get('success')
             self.user_id = response.get('user_id')
-            
-    def save_data(self):
-        data = HashTable()
-        data.set('username', self.username)
-        data.set('user_id', self.user_id)
-        data.set('game_history', self.game_history)
-        with open(self.data_file, 'w') as f:
-            json.dump(data, f)
+    def get_user_data(self, target_username):
+        request = HashTable()
+        request.set('type','get_user_data')
+        request.set('username',target_username)
+        response = self.handler.process_request(request)  
+        return response      
+    
     def get_id(self, username):
         request = HashTable()
         request.set('type', 'get_user_id')

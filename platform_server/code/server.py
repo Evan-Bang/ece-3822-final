@@ -25,7 +25,7 @@ class PlatformServer:
         self.host = host
         self.port = port
 
-        games_dir = ROOT / "Games"
+        games_dir = ROOT / "games"
         server_bin = ROOT / "game_server" / "server_text_smoother"
         ports_file = ROOT / "ports.txt"
 
@@ -101,10 +101,10 @@ class PlatformServer:
 
             print(f"Received summary from C++: {username} scored {score} in {game_name}")
 
-            # 1. Update the score leaderboard
+            # Update the score leaderboard
             self.gm.add_score_lb(game_name, score, username)
             
-            # 2. Update the time leaderboard
+            # Update the time leaderboard
             self.gm.add_time_lb(game_name, playtime, username)
 
             # This is just for debugging
@@ -123,7 +123,17 @@ class PlatformServer:
             game_name = message.get('game_name')
             leaderboard_data = self.leaderboard.get_leaderboard(game_name)
             return {'success': True, 'leaderboard': leaderboard_data}
-        
+        # get sessions
+        elif request_type == 'get_sessions':
+            username = message.get('username')
+            account = self.accounts.accounts.get(username)
+            sessions = [session for session in account.sessions]
+            return {'success': True, 'sessions': sessions}
+        # build session from game summary
+        elif request_type == 'game_summary':
+            username = message.get('username')
+            account = self.accounts.accounts.get(username)
+            account.build_session(message)
         # Chat
 
         # Game hosting
