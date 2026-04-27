@@ -1,7 +1,0 @@
-# Port Assignments for ECE-3822 Final Project
-# -------------------------------------------
-# ALL CODE SHOULD READ PORTS FROM HERE 
-PLATFORM_SERVER=50074
-GAME_1111_PORT=50078
-GAME_THELLU_PORT= 50061
-GAME_LIZZIE_PORT=50085

@@ -50,3 +50,11 @@ class Game_manager:
 
     def get_game(self, title):
         return self.games.get(title)
+    
+    def add_score_lb(self, game_name, value, user):
+        self.games.get(game_name).score_leader_board.add_score(user, value)
+    
+    def add_time_lb(self, game_name, time, user):
+            self.games.get(game_name).time_leader_board.add_score(user, time)
+
+    

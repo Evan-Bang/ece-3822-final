@@ -4,33 +4,48 @@ Python server for the Arcade
 
 import socket
 import asyncio
+from pathlib import Path
 import json
 import time
+import os
 import sys
 sys.path.append('../..')
 import leaderboard as lb
 import data_ingest as di
+from game_server_launcher import game_server_launcher
+from game import Game_manager
 import accounts as acc
 from datastructures.array import ArrayList
+
+ROOT = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(ROOT))
+
 class PlatformServer:
     def __init__(self, host='localhost', port=50074):
         self.host = host
         self.port = port
 
+        games_dir = ROOT / "Games"
+        server_bin = ROOT / "game_server" / "server_text_smoother"
+        ports_file = ROOT / "ports.txt"
+
         # Main features:
         self.accounts = acc.AccountManager()
-        self.leaderboard = lb.Leaderboard()
-        self.time_lb = lb.Leaderboard()
-        self.chat = None # arcade chat Class
-        self.games = None # multiplayer game server hosting Class
 
+        self.gm = Game_manager(str(games_dir))
+        self.gsm = game_server_launcher(
+            str(games_dir),
+            str(server_bin),
+            str(ports_file)
+        )
+        
         # Clients
         self.clients = ArrayList() # list of connected clients
 
     async def start_server(self): # starts the server and listens for incoming connections
         server = await asyncio.start_server(self.handle_client, self.host, self.port)
         print(f'Server started on {self.host}:{self.port} at {time.ctime()}')
-
+        self.gsm.launch_servers()
         async with server:
             await server.serve_forever() # keeps the server running
     
@@ -82,17 +97,19 @@ class PlatformServer:
             username = message.get('username')
             score = message.get('score')
             playtime = message.get('playtime')
-            game_name = message.get('game_name', 'default_game') # Fallback if not sent
+            game_name = message.get('game_name', 'default_game') 
 
-            print(f"Received summary from C++: {username} scored {score}")
+            print(f"Received summary from C++: {username} scored {score} in {game_name}")
 
             # 1. Update the score leaderboard
-            self.leaderboard.add_score(username, score)
+            self.gm.add_score_lb(game_name, score, username)
             
             # 2. Update the time leaderboard
-            self.time_lb.add_score(username, playtime)
-            print(f"top 5 scores : {self.leaderboard.get_top_n(5)}")
-            print(f"top 5 playtimes: {self.time_lb.get_top_n(5)}")
+            self.gm.add_time_lb(game_name, playtime, username)
+
+            # This is just for debugging
+            print(f"top 5 scores for {game_name} : {self.gm.games.get(game_name).score_leader_board.get_top_n(5)}")
+            print(f"top 5 playtimes for {game_name}: {self.gm.games.get(game_name).time_leader_board.get_top_n(5)}")
             return {'success': True, 'message': 'Summary processed'}
 
         elif request_type == 'create_account':
@@ -130,3 +147,4 @@ class PlatformServer:
 if __name__ == "__main__":
     server = PlatformServer()
     asyncio.run(server.start_server())
+   
