@@ -127,8 +127,8 @@ class PlatformServer:
         elif request_type == 'get_sessions':
             username = message.get('username')
             account = self.accounts.accounts.get(username)
-            for session in account.sessions:
-                yield session.encode()
+            sessions = [session for session in account.sessions]
+            return {'success': True, 'sessions': sessions}
         # build session from game summary
         elif request_type == 'game_summary':
             username = message.get('username')
