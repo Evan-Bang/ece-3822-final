@@ -4,7 +4,10 @@ Create account / login: Dictionary with keys as usernames and passwords stored a
 View player profile: provide information about play times, games played, scores, etc. from the json database, depending on which stats are public public via flags
 """
 import sys
-sys.path.append('../..')
+import os
+root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
+sys.path.insert(0, root_path)
+user_data_path = os.path.join(root_path, "user_data")
 from datastructures.array import ArrayList
 from datastructures.hash_table import HashTable
 import os
@@ -134,9 +137,9 @@ class AccountManager:
                 "PASSWORD_HASH": password_storage,
                 "GAME_HISTORY": {}
             }
-            with open("../../user_data/name_id.json","r") as d:
+            with open(f"{user_data_path}/name_id.json", "r") as d:
                 data = json.load(d)
-            with open("../../user_data/name_id.json","w") as w:
+            with open(f"{user_data_path}/name_id.json","w") as w:
                 data[username] = user_id
                 json.dump(data, w, indent=4)
             with open(data_file, "w") as f:
@@ -151,7 +154,7 @@ class AccountManager:
          - Check if username exists and password matches
          - If authentication is successful return True, else False
         """
-        with open("../../user_data/name_id.json","r") as d:
+        with open(f"{user_data_path}/name_id.json","r") as d:
             name_id_data = json.load(d)
         if username not in name_id_data:
             return False

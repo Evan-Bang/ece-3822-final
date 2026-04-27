@@ -189,3 +189,14 @@ class ArrayList:
         for i in range(self._size):
             yield self._data[i]
         pass
+
+    def __eq__(self, other):
+        """
+        Check if two ArrayLists are equal in size and elements
+        """
+        if self._size != other._size:
+            return False
+        for i in range(self._size):
+            if self._data[i] != other._data[i]:
+                return False
+        return True

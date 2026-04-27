@@ -1,0 +1,21 @@
+{
+    "USERNAME": "testuser",
+    "PASSWORD_HASH": "fa7ff5c812657c5ea04bd16827ce6c4a:e835c3b490468de8f432555a1bf9b92c05aa3f393edb0e23cf745e0e04522685",
+    "GAME_DATA": {
+        "SURVIVING_1111": {
+            "PLAY_TIME": "",
+            "SESSIONS": {},
+            "SCORE": ""
+        },
+        "THELLUSOMA": {
+            "PLAY_TIME": "",
+            "SESSIONS": {},
+            "SCORE": ""
+        },
+        "LIZZIES_ADVENTURE": {
+            "PLAY_TIME": "",
+            "SESSIONS": {},
+            "SCORE": ""
+        }
+    }
+}
