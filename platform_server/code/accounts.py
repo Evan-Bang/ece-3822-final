@@ -22,7 +22,7 @@ class Profile:
             raise ValueError("User does not exist")
         else:
             self.user_id = user_id_table.get(username)
-        self.data_file = f'../../user_data/{self.user_id}.json'
+        self.data_file = f'{user_data_path}/{self.user_id}.json'
         self.next_session_id = 1
         self.password = None
         self.initialize_data()
@@ -42,7 +42,7 @@ class Profile:
     def initialize_data(self):
         # Load user data from file or create new file if it doesn't exist
         if self.user_id:
-            self.data_file = f"../../user_data/{self.user_id}.json"
+            self.data_file = f"{user_data_path}/{self.user_id}.json"
             try:
                 with open(self.data_file, 'r') as f:
                     data = json.load(f)
@@ -77,6 +77,13 @@ class Profile:
         data['GAME_HISTORY'] = sessions
         with open(self.data_file, 'w') as f:
             json.dump(data, f)
+    def __eq__(self, other):
+        if not hasattr(other, 'username') or not hasattr(other, 'user_id'):
+            return False
+        if ((self.username == other.username) and (self.user_id == other.user_id)):
+            return True
+        return False
+
 class Session:
     def __init__(self, game, username, time_played, score, id):
         self.game = game
@@ -94,7 +101,7 @@ class AccountManager:
         self.accounts = HashTable()
         self.ids = HashTable()
         try:
-            with open("../../user_data/name_id.json", "r") as f:
+            with open(f"{user_data_path}/name_id.json", "r") as f:
                 data = json.load(f)
                 for username, user_id in data.items():
                     self.ids.set(username, user_id)
@@ -125,7 +132,7 @@ class AccountManager:
                         return False
             self.ids.set(username, user_id)
             self.accounts.set(username, Profile(username, self.ids))
-            data_file = f"../../user_data/{user_id}.json"
+            data_file = f"{user_data_path}/{user_id}.json"
             # Hash password
             hashed = hashlib.sha256(salt + password.encode()).hexdigest()
 
@@ -160,7 +167,7 @@ class AccountManager:
             return False
         else:
             user_id = name_id_data[username]
-        data_file = f"../../user_data/{user_id}.json"
+        data_file = f"{user_data_path}/{user_id}.json"
         with open(data_file, "r") as f:
             user_data = json.load(f)
 
