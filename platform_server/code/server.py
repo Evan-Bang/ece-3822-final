@@ -98,7 +98,9 @@ class PlatformServer:
             score = message.get('score')
             playtime = message.get('playtime')
             game_name = message.get('game_name', 'default_game') 
-
+            username = message.get('username')
+            account = self.accounts.accounts.get(username)
+            account.build_session(message)
             print(f"Received summary from C++: {username} scored {score} in {game_name}")
 
             # Update the score leaderboard
@@ -129,11 +131,27 @@ class PlatformServer:
             account = self.accounts.accounts.get(username)
             sessions = [session for session in account.sessions]
             return {'success': True, 'sessions': sessions}
-        # build session from game summary
-        elif request_type == 'game_summary':
+        elif request_type == 'get_leaderboard':
+            game_name = message.get('game_name')
+            score_lb = self.gm.games.get(game_name).score_leader_board.get_top_n(10)
+            time_lb = self.gm.games.get(game_name).time_leader_board.get_top_n(10)
+            return {'success': True, 'score_leaderboard': score_lb, 'time_leaderboard': time_lb}
+        elif request_type == 'get_user_data':
             username = message.get('username')
             account = self.accounts.accounts.get(username)
-            account.build_session(message)
+            if account:
+                user_data = {
+                    'username': account.username,
+                    'sessions': [session for session in account.sessions]
+                }
+                return {'success': True, 'user_data': user_data}
+            else:
+                return {'success': False, 'message': 'User not found'}
+        elif request_type == 'prefix_search':
+            prefix = message.get('prefix')
+            results = self.accounts.prefix_search_account(prefix)
+            return {'success': True, 'results': results}
+
         # Chat
 
         # Game hosting

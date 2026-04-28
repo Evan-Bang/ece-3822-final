@@ -46,7 +46,13 @@ class ServerHandler:
         return json.loads(response.decode('utf-8'))
     def port_forward(self, username):
         subprocess.Popen(['ssh', '-L', f'8080:localhost:{SERVER_PORT}', f'{username}@ece-000.eng.temple.edu', '-N'])
-        
+    def search_usernames(self, prefix):
+        request = HashTable()
+        request.set('type', 'prefix_search')
+        request.set('prefix', prefix)
+        response = self.process_request(request)
+        return response.get('results', [])
+      
 
 class UserData:
     def __init__(self, handler):

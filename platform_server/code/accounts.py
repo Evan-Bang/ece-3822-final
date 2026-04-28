@@ -10,6 +10,7 @@ sys.path.insert(0, root_path)
 user_data_path = os.path.join(root_path, "user_data")
 from datastructures.array import ArrayList
 from datastructures.hash_table import HashTable
+from datastructures.prefix_tree import prefix_tree
 import os
 import hashlib
 import json
@@ -97,7 +98,7 @@ class Session:
 class AccountManager:
     def __init__(self):
         self.players = ArrayList()
-        self.usernames = ArrayList()
+        self.usernames = prefix_tree()
         self.accounts = HashTable()
         self.ids = HashTable()
         try:
@@ -105,7 +106,7 @@ class AccountManager:
                 data = json.load(f)
                 for username, user_id in data.items():
                     self.ids.set(username, user_id)
-                    self.usernames.append(username)
+                    self.usernames.add_word(username)
         except FileNotFoundError:
             pass
     def create_account(self, username, password):
@@ -117,7 +118,7 @@ class AccountManager:
         """
         if username not in self.usernames:
             # Generate salt
-            self.usernames.append(username)
+            self.usernames.add_word(username)
             salt = os.urandom(16)
             user_id = None
             i = 0
@@ -183,7 +184,11 @@ class AccountManager:
             return Profile(username, self.ids)
         else:
             return False
-
+    def prefix_search_account(self, prefix):
+        if self.usernames.search_prefix(prefix):
+            return self.usernames.get_words_with_prefix(prefix)
+        else:
+            return []
 if __name__ == "__main__":
     username = "tuq10172"
     password = "nullptr"
