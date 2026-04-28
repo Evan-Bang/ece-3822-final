@@ -71,7 +71,6 @@ class DrawLoginPage:
             if self.login_button.collidepoint(event.pos):
                 user = UserData(self.handler)
                 user.login(self.username_text, self.password_text)
-
                 if user.logged_in:
                     print("Login successful")
                     self.page_manager.set_page(DrawMainPage(self.screen, self.page_manager, self.username_text))
@@ -206,10 +205,12 @@ class DrawCreateAccountPage:
         self.draw_text("Create Account", FONT, WHITE, self.create_button.centerx, self.create_button.centery)
 
 class DrawMainPage:
-    def __init__(self, screen, page_manager, username):
+    def __init__(self, screen, page_manager, username, handler):
         self.screen = screen
         self.page_manager = page_manager
         self.username = username
+        self.handler = handler
+        self.profile_button = pygame.Rect(550, 120, 200, 50)
         self.search_button = pygame.Rect(300, 120, 200, 50)
         self.games = self.get_games()
         self.game_buttons = []
@@ -243,7 +244,11 @@ class DrawMainPage:
         if event.type == pygame.MOUSEBUTTONDOWN:
             if self.search_button.collidepoint(event.pos):
                 self.page_manager.set_page(
-                    DrawSearchUserPage(self.screen, self.page_manager, ServerHandler())
+                    DrawSearchUserPage(self.screen, self.page_manager, self.handler)
+                )
+            if self.profile_button.collidepoint(event.pos):
+                self.page_manager.set_page(
+                    DrawUserPage(self.screen, self.page_manager, self.handler, self.username)
                 )
 
     def draw(self):
@@ -254,6 +259,20 @@ class DrawMainPage:
         draw_glow_rect(self.screen, self.search_button, PANEL,
                     NEON_BLUE if self.search_button.collidepoint(pygame.mouse.get_pos()) else NEON_PURPLE)
 
+        draw_glow_rect(
+            self.screen,
+            self.profile_button,
+            PANEL,
+            NEON_BLUE if self.profile_button.collidepoint(mouse_pos) else NEON_PURPLE
+        )
+
+        self.draw_text(
+            "My Profile",
+            FONT,
+            WHITE,
+            self.profile_button.centerx,
+            self.profile_button.centery
+        )
         self.draw_text("Search Users", FONT, WHITE,
                     self.search_button.centerx, self.search_button.centery)
         mouse_pos = pygame.mouse.get_pos()
