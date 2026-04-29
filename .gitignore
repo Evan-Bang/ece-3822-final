@@ -10,3 +10,5 @@ game_server/surviving_1111_chat_history.txt
 /python_client/code/__pycache__
 python_client/code/__pycache__/
 
+python_client/code/__pycache__/draw_page.cpython-312.pyc
+python_client/code/__pycache__/game_instance_manager.cpython-312.pyc

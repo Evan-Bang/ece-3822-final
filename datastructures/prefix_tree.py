@@ -88,7 +88,7 @@ class prefix_tree:
                     return word_list
             # Start depth first
                 current = current.children.get(char)
-                character_stack.push((current, prefix))
+            character_stack.push((current, prefix))
 
             while len(character_stack) > 0:
                 node, current_word = character_stack.pop()
