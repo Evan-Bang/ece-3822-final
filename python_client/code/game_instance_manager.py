@@ -1,6 +1,22 @@
+import pygame
+import sys
 import subprocess
+import time
+from datetime import date
 import os
-
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+from datastructures.array import ArrayList
+class GameInstanceManager:
+    def __init__(self):
+        self.instances = ArrayList()
+    def add_instance(self, instance):
+        self.instances.append(instance)
+    def remove_instance(self, instance):
+        self.instances.remove(instance)
+    def stop_all_instances(self):
+        for instance in self.instances:
+            instance.stop()
+        self.instances = ArrayList()
 class RunInstance:
     def __init__(self, username):
         self.username = username
