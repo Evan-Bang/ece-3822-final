@@ -13,18 +13,14 @@ class ServerHandler:
     def __init__(self):
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.ip_address = IP_ADDRESS
-        self.port = SERVER_PORT
+        self.port = PLATFORM_SERVER
         self.connected = False
-    def connect(self, username):
-        self.port_forward(username)
-        self.client_socket.connect((self.ip_address, self.port))
+    def connect(self):
         try:
-            message = "Connecting to server..."
-            self.client_socket.sendall(message.encode('utf-8'))
-            response = self.client_socket.recv(1024)
-            if response.decode('utf-8') == "Connection successful":
-                self.connected = True
-                print("Connected to server successfully.")
+            print("Connecting to server...")
+            self.client_socket.connect((self.ip_address, self.port))
+            self.connected = True
+            print("Connected to server successfully.")
         except Exception as e:
             print(f"Error occurred while connecting to server: {e}")
             self.client_socket.close()
@@ -41,11 +37,19 @@ class ServerHandler:
         response = self.process_request(request)
         return response
     def process_request(self, request):
-        self.client_socket.send(json.dumps(request.to_dict()).encode())
-        response = self.client_socket.recv(BUFFER_SIZE)
-        return json.loads(response.decode('utf-8'))
-    def port_forward(self, username):
-        subprocess.Popen(['ssh', '-L', f'8080:localhost:{SERVER_PORT}', f'{username}@ece-000.eng.temple.edu', '-N'])
+        message = json.dumps(request.to_dict()) + '\n'
+        self.client_socket.sendall(message.encode('utf-8'))
+        buffer = b""
+        while b"\n" not in buffer:
+            chunk = self.client_socket.recv(BUFFER_SIZE)
+            if not chunk:
+                print("Connection closed by server.")
+                self.connected = False
+                return None
+            buffer += chunk
+        response = buffer.decode('utf-8').strip()
+        return json.loads(response)
+
     def search_usernames(self, prefix):
         request = HashTable()
         request.set('type', 'prefix_search')
@@ -53,7 +57,6 @@ class ServerHandler:
         response = self.process_request(request)
         return response.get('results', [])
       
-
 class UserData:
     def __init__(self, handler):
         self.handler = handler
@@ -63,7 +66,6 @@ class UserData:
         self.logged_in = False
 
     def create_account(self, username, password):
-        self.handler.connect(username)
         request = HashTable()
         request.set('type', 'create_account')
         request.set('username', username)
@@ -71,7 +73,6 @@ class UserData:
         response = self.handler.process_request(request)
         return response
     def login(self, username, password):
-        self.handler.connect(username)
         request = HashTable()
         request.set('type', 'login')
         request.set('username', username)

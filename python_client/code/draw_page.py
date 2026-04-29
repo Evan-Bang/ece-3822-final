@@ -69,16 +69,18 @@ class DrawLoginPage:
                 self.active_box = None
 
             if self.login_button.collidepoint(event.pos):
+                if not self.handler.connected:
+                    self.handler.connect()
                 user = UserData(self.handler)
                 user.login(self.username_text, self.password_text)
                 if user.logged_in:
                     print("Login successful")
-                    self.page_manager.set_page(DrawMainPage(self.screen, self.page_manager, self.username_text))
+                    self.page_manager.set_page(DrawMainPage(self.screen, self.page_manager, self.username_text, self.handler))
                 else:
                     print("Login failed")
 
             if self.create_button.collidepoint(event.pos):
-                self.page_manager.set_page(DrawCreateAccountPage(self.screen, self.page_manager))
+                self.page_manager.set_page(DrawCreateAccountPage(self.screen, self.page_manager, self.handler))
 
         if event.type == pygame.KEYDOWN:
             if self.active_box == 'username':
@@ -124,9 +126,10 @@ class DrawLoginPage:
         self.draw_text("Create Account", FONT, WHITE, self.create_button.centerx, self.create_button.centery)
 
 class DrawCreateAccountPage:
-    def __init__(self, screen, page_manager):
+    def __init__(self, screen, page_manager, handler):
         self.screen = screen
         self.page_manager = page_manager
+        self.handler = handler
 
         self.username_rect = pygame.Rect(300, 200, 200, 40)
         self.password_rect = pygame.Rect(300, 260, 200, 40)
@@ -158,12 +161,14 @@ class DrawCreateAccountPage:
                 self.active_box = None
 
             if self.create_button.collidepoint(event.pos):
-                user = UserData(self.username_text)
+                if not self.handler.connected:
+                    self.handler.connect()
+                user = UserData(self.handler)
                 user.create_account(self.username_text, self.password_text)
 
                 if user.user_id is not None:
                     print("Account created successfully")
-                    self.page_manager.set_page(DrawMainPage(self.screen, self.page_manager, self.username_text))
+                    self.page_manager.set_page(DrawMainPage(self.screen, self.page_manager, self.username_text, self.handler))
                 else:
                     print("Account creation failed")
 
@@ -317,7 +322,7 @@ class DrawUserPage:
         if event.type == pygame.MOUSEBUTTONDOWN:
             if self.back_button.collidepoint(event.pos):
                 self.page_manager.set_page(
-                    DrawMainPage(self.screen, self.page_manager, self.username)
+                    DrawMainPage(self.screen, self.page_manager, self.username, self.handler)
                 )
 
     def draw(self):
@@ -376,12 +381,12 @@ class DrawGamePage:
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
             if self.run_button.collidepoint(event.pos):
-                instance = RunInstance()
-                instance.run(self.username, self.game)
+                instance = RunInstance(self.username)
+                instance.run(self.game)
 
             if self.back_button.collidepoint(event.pos):
                 self.page_manager.set_page(
-                    DrawMainPage(self.screen, self.page_manager, self.username)
+                    DrawMainPage(self.screen, self.page_manager, self.username, self.handler)
                 )
 
     def draw(self):

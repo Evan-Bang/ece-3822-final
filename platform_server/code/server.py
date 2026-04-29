@@ -60,10 +60,10 @@ class PlatformServer:
 
         while True:
             try:
-                data = await reader.read(1024)
+                data = await reader.readline()
                 if not data:
                     break
-                message = json.loads(data.decode())
+                message = json.loads(data.decode().strip())
                 response = await self.process_message(message)
 
                 if response is not None:
