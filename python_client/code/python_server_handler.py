@@ -25,6 +25,19 @@ class ServerHandler:
         if self.tunnel_started:
             return
 
+        # Check if port already in use
+        import subprocess
+        result = subprocess.run(
+            ["lsof", "-ti", ":50074"],
+            capture_output=True,
+            text=True
+        )
+
+        if result.stdout.strip():
+            print("Tunnel already exists, reusing it")
+            self.tunnel_started = True
+            return
+
         subprocess.Popen([
             'ssh',
             '-N',
@@ -33,6 +46,7 @@ class ServerHandler:
         ])
 
         self.tunnel_started = True
+        time.sleep(1.5)
     def connect(self, username):
         self.start_tunnel(username)
 
@@ -44,7 +58,7 @@ class ServerHandler:
 
         for _ in range(5):
             try:
-                self.client_socket.connect((self.ip_address, 50074))
+                self.client_socket.connect(("localhost", 50074))
                 self.connected = True
                 return
             except (ConnectionRefusedError, OSError):
