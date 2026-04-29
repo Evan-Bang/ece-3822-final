@@ -23,7 +23,7 @@ class RunInstance:
         self.current_game = None
         self.process = None
         self.running = False
-        self.singleplayer = True
+        self.singleplayer = False
         self.assigned_port = None
 
         # Base path for reliability
@@ -35,15 +35,19 @@ class RunInstance:
     # Load port from Ports.txt
     # -----------------------------
     def get_assigned_port(self):
-        ports_file = os.path.join(self.base_path, "Ports.txt")
+        ports_file = os.path.join(self.base_path, "ports.txt")
 
         try:
             with open(ports_file, "r") as f:
-                for line in f:
-                    if line.startswith(self.current_game):
+                lines = f.readlines()
+                print(f"Ports.txt contents: {lines}")
+                print(f"Looking for: 'GAME_{self.current_game.upper()}'")
+                for line in lines:
+                    print(f"  Checking line: {repr(line)}")
+                    if line.startswith("GAME_" + self.current_game.upper()):
                         return int(line.split("=")[1].strip())
         except FileNotFoundError:
-            print("Ports.txt not found")
+            print(f"Ports.txt not found at: {ports_file}")
 
         return None
 
@@ -53,6 +57,7 @@ class RunInstance:
     def run(self, game):
         self.current_game = game
         self.assigned_port = self.get_assigned_port()
+        print(f"Assigned port for {game}: {self.assigned_port}")
         game_dir = os.path.join(self.base_path, "games", self.current_game, "code", "game")
 
 
@@ -87,7 +92,9 @@ class RunInstance:
                 self.username,
                 "--port",
                 str(self.assigned_port)
-            ])
+            ],
+            cwd=game_dir
+            )
 
         self.running = True
 
