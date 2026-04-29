@@ -93,8 +93,7 @@ class Session:
         self.score = score
         self.id = id
     def encode(self):
-        session = {"GAME":self.game,"USERNAME":self.username,"PLAYTIME":self.time_played,"SCORE":self.score}
-        return session
+        return {"GAME":self.game,"USERNAME":self.username,"PLAYTIME":self.time_played,"SCORE":self.score}
 class AccountManager:
     def __init__(self):
         self.players = ArrayList()
@@ -152,7 +151,8 @@ class AccountManager:
                 json.dump(data, w, indent=4)
             with open(data_file, "w") as f:
                 json.dump(user_data, f, indent=4)
-            return Profile(username, self.ids)
+            self.accounts.set(username, Profile(username, self.ids))
+            return (True, "Account created successfully")
         else:
             return False
 
@@ -181,7 +181,8 @@ class AccountManager:
         new_hash = hashlib.sha256(salt + password.encode()).hexdigest()
 
         if new_hash == stored_hash:
-            return Profile(username, self.ids)
+            self.accounts.set(username, Profile(username, self.ids))
+            return ('True','Login successful')
         else:
             return False
     def prefix_search_account(self, prefix):
