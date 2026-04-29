@@ -153,7 +153,7 @@ class PlatformServer:
         elif request_type == 'prefix_search':
             prefix = message.get('prefix')
             results = self.accounts.prefix_search_account(prefix)
-            return {'success': True, 'results': results}
+            return {'success': True, 'results': results._data}
 
         # Chat
 
