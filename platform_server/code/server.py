@@ -145,7 +145,7 @@ class PlatformServer:
             if account:
                 user_data = {
                     'username': account.username,
-                    'sessions': [session for session in account.sessions]
+                    'sessions': [session.encode() for session in account.sessions]
                 }
                 return {'success': True, 'user_data': user_data}
             else:

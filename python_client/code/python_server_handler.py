@@ -82,7 +82,7 @@ class ServerHandler:
             if not self.connected:
                 return None
 
-            data = json.dumps(request).encode('utf-8')
+            data = (json.dumps(request) + "\n").encode('utf-8')
             self.client_socket.sendall(data)
 
             response = self.client_socket.recv(BUFFER_SIZE)
