@@ -186,7 +186,7 @@ class AccountManager:
             return False
     def prefix_search_account(self, prefix):
         if self.usernames.search_prefix(prefix):
-            return self.usernames.get_words_with_prefix(prefix)
+            return self.usernames.find_words(prefix)
         else:
             return []
 if __name__ == "__main__":
