@@ -73,7 +73,7 @@ class DrawLoginPage:
                 user.login(self.username_text, self.password_text)
                 if user.logged_in:
                     print("Login successful")
-                    self.page_manager.set_page(DrawMainPage(self.screen, self.page_manager, self.username_text))
+                    self.page_manager.set_page(DrawMainPage(self.screen, self.page_manager, self.username_text, self.handler))
                 else:
                     print("Login failed")
 
@@ -254,7 +254,7 @@ class DrawMainPage:
     def draw(self):
         self.screen.fill(DARK_BG)
         draw_stars(self.screen)
-
+        mouse_pos = pygame.mouse.get_pos()
         self.draw_text("Select a Game", BIG_FONT, NEON_BLUE, WIDTH // 2, 100, glow=True)
         draw_glow_rect(self.screen, self.search_button, PANEL,
                     NEON_BLUE if self.search_button.collidepoint(pygame.mouse.get_pos()) else NEON_PURPLE)
@@ -275,7 +275,7 @@ class DrawMainPage:
         )
         self.draw_text("Search Users", FONT, WHITE,
                     self.search_button.centerx, self.search_button.centery)
-        mouse_pos = pygame.mouse.get_pos()
+        
 
         for game, rect in self.game_buttons:
             draw_glow_rect(self.screen, rect, PANEL,

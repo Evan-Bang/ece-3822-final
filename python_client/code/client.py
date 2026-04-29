@@ -15,7 +15,6 @@ if __name__ == "__main__":
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     client = Client(screen)
     running = True
-    
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
