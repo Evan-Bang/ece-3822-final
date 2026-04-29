@@ -194,12 +194,7 @@ if __name__ == "__main__":
     username = "tut69764"
     password = "nullptr"
     manager = AccountManager()
-    account = manager.authenticate(username,password)
-    if account:
-        print("login")
-    account.build_session({'game':'Thellusoma','playtime':'500','score':'69696969'})
-    account.build_session({'game':'Surviving 1111','playtime':'0.001','score':'2'})
-    print(account.sessions)
-    account.save_data()
+    account = manager.create_account(username,password)
+
 
     
