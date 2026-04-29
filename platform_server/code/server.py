@@ -164,7 +164,8 @@ class PlatformServer:
                 return {'success': False, 'message': 'User not found'}
         elif request_type == 'prefix_search':
             prefix = message.get('prefix')
-            results = self.accounts.prefix_search_account(prefix)
+
+            results = self.accounts.prefix_search_account(prefix)._data
 
             if not results:
                 results = []

@@ -191,10 +191,13 @@ class AccountManager:
         else:
             return []
 if __name__ == "__main__":
-    username = "tuf08092"
+    username1 = "tuf08092"
+    username2 = "tut69764"
     password = "nullptr"
     manager = AccountManager()
-    account = manager.create_account(username,password)
+    account = manager.create_account(username1,password)
+    account2 = manager.create_account(username2,password)
+
 
 
     
