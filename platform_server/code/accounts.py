@@ -189,7 +189,7 @@ class AccountManager:
         if self.usernames.is_prefix(prefix):
             return self.usernames.find_words(prefix)
         else:
-            return []
+            return ArrayList()
 if __name__ == "__main__":
     username1 = "tuf08092"
     username2 = "tut69764"

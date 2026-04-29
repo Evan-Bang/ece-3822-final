@@ -456,6 +456,7 @@ class DrawSearchUserPage:
         if self.text.strip() == '':
             self.suggestions = []
             self.create_suggestion_rects()
+            print(self.suggestions)
             return
 
         results = self.handler.search_usernames(self.text)
