@@ -53,6 +53,8 @@ class RunInstance:
     def run(self, game):
         self.current_game = game
         self.assigned_port = self.get_assigned_port()
+        game_dir = os.path.join(self.base_path, "games", self.current_game, "code", "game")
+
 
         game_file = os.path.join(
             self.base_path,
@@ -73,7 +75,9 @@ class RunInstance:
                 "python3",
                 game_file,
                 self.username
-            ])
+            ],
+            cwd=game_dir
+            )
         else:
             self.start_port_forward()
 
