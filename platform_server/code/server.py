@@ -49,7 +49,12 @@ class PlatformServer:
         self.gsm.launch_servers()
         async with server:
             await server.serve_forever() # keeps the server running
-    
+    def safe_json(self, obj):
+        try:
+            return json.dumps(obj)
+        except Exception as e:
+            print("JSON ERROR:", e)
+            return json.dumps({"success": False, "error": "serialization failure"})
     # Process client requests and provide appropriate responses based on the request type (e.g., login, account creation, leaderboard queries, etc.)
     async def handle_client(self, reader, writer):
         client_socket = writer.get_extra_info('socket')
@@ -67,8 +72,8 @@ class PlatformServer:
                 message = json.loads(data.decode().strip())
                 response = await self.process_message(message)
 
-                if response is not None:
-                    writer.write((json.dumps(response) + "\n").encode())
+                if isinstance(response, dict):
+                    writer.write((self.safe_json(response) + "\n").encode())
                     print("Received:", message)
                     print("Sending:", response)
                     await writer.drain()
@@ -85,7 +90,7 @@ class PlatformServer:
             
         writer.close()
         await writer.wait_closed()
-    
+
     async def process_message(self, message): # processes incoming client messages and generates appropriate responses
         request_type = message.get('type')
         
@@ -93,8 +98,8 @@ class PlatformServer:
         if request_type == 'login':
             username = message.get('username')
             password = message.get('password')
-            success, message = self.accounts.authenticate(username, password) # authenticate the user and return success status and message
-            return {'success': success, 'message': message}
+            success, msg = self.accounts.authenticate(username, password)
+            return {'success': success, 'message': msg}
         
         elif request_type == 'game_summary':
             username = message.get('username')
@@ -103,6 +108,10 @@ class PlatformServer:
             game_name = message.get('game_name', 'default_game') 
             username = message.get('username')
             account = self.accounts.accounts.get(username)
+
+            if account is None:
+                return {'success': False, 'message': 'Invalid user'}
+
             account.build_session(message)
             print(f"Received summary from C++: {username} scored {score} in {game_name}")
 
@@ -120,19 +129,26 @@ class PlatformServer:
         elif request_type == 'create_account':
             username = message.get('username')
             password = message.get('password')
-            success, message = self.accounts.create_account(username, password)
-            return {'success': success, 'message': message}
+            success, msg = self.accounts.create_account(username, password)
+            return {'success': success, 'message': msg}
         
         # get sessions
         elif request_type == 'get_sessions':
             username = message.get('username')
             account = self.accounts.accounts.get(username)
-            sessions = [session for session in account.sessions]
+            sessions = [session.encode() for session in account.sessions]
             return {'success': True, 'sessions': sessions}
         elif request_type == 'get_leaderboard':
             game_name = message.get('game_name')
-            score_lb = self.gm.games.get(game_name).score_leader_board.get_top_n(10)
-            time_lb = self.gm.games.get(game_name).time_leader_board.get_top_n(10)
+            score_lb = [
+                {"uuid": u, "score": s}
+                for u, s in self.gm.games.get(game_name).score_leader_board.get_top_n(10)
+            ]
+
+            time_lb = [
+                {"uuid": u, "time": t}
+                for u, t in self.gm.games.get(game_name).time_leader_board.get_top_n(10)
+            ]
             return {'success': True, 'score_leaderboard': score_lb, 'time_leaderboard': time_lb}
         elif request_type == 'get_user_data':
             username = message.get('username')
