@@ -377,11 +377,29 @@ class DrawGamePage:
         self.username = username
         self.game = game
         self.handler = handler
+
         self.run_button = pygame.Rect(300, 200, 200, 50)
         self.back_button = pygame.Rect(300, 270, 200, 50)
 
+        self.leaderboard = []   # ALWAYS initialize
+
+        self.build_leaderboard()
+
+    def build_leaderboard(self):
+        request = {
+            "type": "get_leaderboard",
+            "game_name": self.game
+        }
+
+        response = self.handler.process_request(request)
+
+        if response and response.get("success"):
+            self.leaderboard = response.get("score_leaderboard", [])
+        else:
+            self.leaderboard = []
+
     def draw_text(self, text, font, color, x, y):
-        textobj = font.render(text, True, color)
+        textobj = font.render(str(text), True, color)
         textrect = textobj.get_rect(center=(x, y))
         self.screen.blit(textobj, textrect)
 
@@ -391,7 +409,7 @@ class DrawGamePage:
                 instance = RunInstance(self.username)
                 instance.run(self.game)
 
-            if self.back_button.collidepoint(event.pos):
+            elif self.back_button.collidepoint(event.pos):
                 self.page_manager.set_page(
                     DrawMainPage(self.screen, self.page_manager, self.username, self.handler)
                 )
@@ -399,30 +417,23 @@ class DrawGamePage:
     def draw(self):
         self.screen.fill(WHITE)
 
-        # Title
         self.draw_text(self.game, BIG_FONT, BLACK, WIDTH // 2, 100)
 
-        # Buttons
         pygame.draw.rect(self.screen, DARK_GRAY, self.run_button)
         pygame.draw.rect(self.screen, DARK_GRAY, self.back_button)
 
         self.draw_text("Play", FONT, WHITE, self.run_button.centerx, self.run_button.centery)
         self.draw_text("Back", FONT, WHITE, self.back_button.centerx, self.back_button.centery)
 
-        # Leaderboard title
         self.draw_text("Leaderboard", FONT, BLACK, WIDTH // 2, 350)
 
-        # Leaderboard entries
         y = 400
         if self.leaderboard:
-            for entry in self.leaderboard:
-                text = str(entry)
-                self.draw_text(text, FONT, BLACK, WIDTH // 2, y)
+            for entry in self.leaderboard[:10]:
+                self.draw_text(entry, FONT, BLACK, WIDTH // 2, y)
                 y += 30
         else:
             self.draw_text("No scores yet", FONT, BLACK, WIDTH // 2, 400)
-
-
 class DrawSearchUserPage:
     def __init__(self, screen, page_manager, handler):
         self.screen = screen
@@ -444,15 +455,15 @@ class DrawSearchUserPage:
     def update_suggestions(self):
         if self.text.strip() == '':
             self.suggestions = []
+            self.create_suggestion_rects()
             return
 
         results = self.handler.search_usernames(self.text)
 
-        # your server returns {'results': [...]}
-        if results and isinstance(results, dict):
-            self.suggestions = results.get('results', [])
+        if not isinstance(results, dict):
+            self.suggestions = []
         else:
-            self.suggestions = results or []
+            self.suggestions = results.get('results') or []
 
         self.create_suggestion_rects()
 
@@ -471,7 +482,7 @@ class DrawSearchUserPage:
             else:
                 self.active = False
 
-            # Click suggestion → autofill
+            # Click suggestion -> autofill
             for name, rect in self.suggestion_rects:
                 if rect.collidepoint(event.pos):
                     self.text = name
@@ -479,7 +490,7 @@ class DrawSearchUserPage:
 
         if event.type == pygame.KEYDOWN and self.active:
             if event.key == pygame.K_RETURN:
-                # ENTER → go to user page if valid
+                # ENTER -> go to user page if valid
                 if self.text in self.suggestions:
                     self.page_manager.set_page(
                         DrawUserPage(self.screen, self.page_manager, self.handler, self.text)

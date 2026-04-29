@@ -146,7 +146,7 @@ class GameData:
         return self.game_data
     def get_leaderboard(self):
         request = HashTable()
-        request.set('type','leaderboard_query')
+        request.set('type','get_leaderboard')
         request.set('game_name', self.game_name)
 
         return self.leaderboard

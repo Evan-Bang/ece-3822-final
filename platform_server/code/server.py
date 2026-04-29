@@ -123,11 +123,6 @@ class PlatformServer:
             success, message = self.accounts.create_account(username, password)
             return {'success': success, 'message': message}
         
-        # Leaderboard
-        elif request_type == 'leaderboard_query':
-            game_name = message.get('game_name')
-            leaderboard_data = self.leaderboard.get_leaderboard(game_name)
-            return {'success': True, 'leaderboard': leaderboard_data}
         # get sessions
         elif request_type == 'get_sessions':
             username = message.get('username')
@@ -152,8 +147,16 @@ class PlatformServer:
                 return {'success': False, 'message': 'User not found'}
         elif request_type == 'prefix_search':
             prefix = message.get('prefix')
+
             results = self.accounts.prefix_search_account(prefix)
-            return {'success': True, 'results': results}
+
+            if results is None:
+                results = []
+
+            return {
+                'success': True,
+                'results': results
+            }
 
         # Chat
 
