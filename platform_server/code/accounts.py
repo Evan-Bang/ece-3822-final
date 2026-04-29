@@ -181,7 +181,8 @@ class AccountManager:
         new_hash = hashlib.sha256(salt + password.encode()).hexdigest()
 
         if new_hash == stored_hash:
-            return Profile(username, self.ids)
+            self.accounts.set(username, Profile(username, self.ids))
+            return ('True','Login successful')
         else:
             return False
     def prefix_search_account(self, prefix):

@@ -9,6 +9,7 @@ import json
 import time
 import os
 import sys
+from urllib import response
 sys.path.append('../..')
 import leaderboard as lb
 import data_ingest as di
@@ -67,7 +68,9 @@ class PlatformServer:
                 response = await self.process_message(message)
 
                 if response is not None:
-                    writer.write(json.dumps(response).encode())
+                    writer.write((json.dumps(response) + "\n").encode())
+                    print("Received:", message)
+                    print("Sending:", response)
                     await writer.drain()
             
             except Exception as e:
