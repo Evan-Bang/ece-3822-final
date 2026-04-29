@@ -17,6 +17,7 @@ from game_server_launcher import game_server_launcher
 from game import Game_manager
 import accounts as acc
 from datastructures.array import ArrayList
+from datastructures.prefix_tree import prefix_tree
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
@@ -163,11 +164,13 @@ class PlatformServer:
                 return {'success': False, 'message': 'User not found'}
         elif request_type == 'prefix_search':
             prefix = message.get('prefix')
-
             results = self.accounts.prefix_search_account(prefix)
 
-            if results is None:
+            if not results:
                 results = []
+
+            # 🔥 remove None values
+            results = [r for r in results if r is not None]
 
             return {
                 'success': True,
