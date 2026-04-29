@@ -152,9 +152,9 @@ class AccountManager:
             with open(data_file, "w") as f:
                 json.dump(user_data, f, indent=4)
             self.accounts.set(username, Profile(username, self.ids))
-            return (True, "Account created successfully")
+            return ('True', "Account created successfully")
         else:
-            return False
+            return 'False'
 
     def authenticate(self, username, password):
         """
@@ -191,7 +191,7 @@ class AccountManager:
         else:
             return []
 if __name__ == "__main__":
-    username = "tuq10172"
+    username = "tut69764"
     password = "nullptr"
     manager = AccountManager()
     account = manager.authenticate(username,password)
