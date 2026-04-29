@@ -70,9 +70,10 @@ class DrawLoginPage:
 
             if self.login_button.collidepoint(event.pos):
                 if not self.handler.connected:
-                    self.handler.connect()
+                    self.handler.connect(self.username_text)
                 user = UserData(self.handler)
                 user.login(self.username_text, self.password_text)
+
                 if user.logged_in:
                     print("Login successful")
                     self.page_manager.set_page(DrawMainPage(self.screen, self.page_manager, self.username_text, self.handler))

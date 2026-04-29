@@ -28,7 +28,7 @@ class ServerHandler:
         subprocess.Popen([
             'ssh',
             '-N',
-            '-L', f'8080:localhost:{self.port}',
+            '-L', f'50074:localhost:{self.port}',
             f'{username}@ece-000.eng.temple.edu'
         ])
 
@@ -39,9 +39,12 @@ class ServerHandler:
         if self.connected:
             return
 
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client_socket.settimeout(5)
+
         for _ in range(5):
             try:
-                self.client_socket.connect((self.ip_address, self.port))
+                self.client_socket.connect((self.ip_address, 50074))
                 self.connected = True
                 return
             except (ConnectionRefusedError, OSError):
@@ -78,8 +81,6 @@ class ServerHandler:
             print("Connection broken")
             self.connected = False
             return None
-    def port_forward(self, username):
-        subprocess.Popen(['ssh', '-L', f'50074:localhost:{SERVER_PORT}', f'{username}@ece-000.eng.temple.edu', '-N'])
     def search_usernames(self, prefix):
         request = {'type': 'prefix_search', 'prefix': prefix}
         response = self.process_request(request)
