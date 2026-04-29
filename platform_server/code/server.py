@@ -164,7 +164,7 @@ class PlatformServer:
         elif request_type == 'prefix_search':
             prefix = message.get('prefix')
 
-            results = self.accounts.prefix_search_account(prefix)
+            results = self.accounts.prefix_search_account(prefix)._data
 
             if results is None:
                 results = []
