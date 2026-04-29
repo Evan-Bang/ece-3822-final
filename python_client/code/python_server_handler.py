@@ -16,7 +16,7 @@ class ServerHandler:
         self.client_socket.settimeout(5)
 
         self.ip_address = IP_ADDRESS
-        self.port = SERVER_PORT
+        self.port = PLATFORM_SERVER
         self.connected = False
 
         self.tunnel_started = False
@@ -85,7 +85,6 @@ class ServerHandler:
         response = self.process_request(request)
         return response.get('results', [])
       
-
 class UserData:
     def __init__(self, handler):
         self.handler = handler

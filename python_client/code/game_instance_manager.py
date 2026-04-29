@@ -36,14 +36,14 @@ class RunInstance:
             subprocess.Popen(["python3", game_file, self.username])
         else:
             self.port_forward(self.current_instance)
-            subprocess.Popen(["python3", game_file, self.username, '--port', '8000'])
+            subprocess.Popen(["python3", game_file, self.username, '--port', str(self.assigned_port)])
         self.running = True
         
         # self.start_time = time.time()
         # self.end_time = None
         # self.date = date.today()
     def port_forward(self):
-        subprocess.Popen(['ssh', '-L', f'8000:localhost:{self.assigned_port}', f'{self.username}@ece-000.eng.temple.edu', '-N'])
+        subprocess.Popen(['ssh', '-L', f'{self.assigned_port}:localhost:{self.assigned_port}', f'{self.username}@ece-000.eng.temple.edu', '-N'])
         
     def stop(self):
         self.running = False
