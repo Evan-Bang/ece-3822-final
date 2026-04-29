@@ -1,58 +1,105 @@
-import pygame
-import sys
 import subprocess
-import time
-from datetime import date
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
-from datastructures.array import ArrayList
-class GameInstanceManager:
-    def __init__(self):
-        self.instances = ArrayList()
-    def add_instance(self, instance):
-        self.instances.append(instance)
-    def remove_instance(self, instance):
-        self.instances.remove(instance)
+
 class RunInstance:
     def __init__(self, username):
-        self.running = False
-        self.current_instance = None
-        self.singleplayer = True
         self.username = username
-        # self.start_time = None
-        # self.end_time = None
-        # self.date = None
-    def get_assigned_port(self):
-        with open("../../Ports.txt", "r") as f:
-            for line in f:
-                if line.startswith(self.current_instance):
-                    return int(line.split('=')[1].strip())
-        return None
-    def run(self, game):
-        self.current_instance = game
-        game_file = f"../../games/{self.current_instance}/code/game/main.py"
-        self.assigned_port = self.get_assigned_port()
-        if self.singleplayer:
-            subprocess.Popen(["python3", game_file, self.username])
-        else:
-            self.port_forward(self.current_instance)
-            subprocess.Popen(["python3", game_file, self.username, '--port', str(self.assigned_port)])
-        self.running = True
-        
-        # self.start_time = time.time()
-        # self.end_time = None
-        # self.date = date.today()
-    def port_forward(self):
-        subprocess.Popen(['ssh', '-L', f'{self.assigned_port}:localhost:{self.assigned_port}', f'{self.username}@ece-000.eng.temple.edu', '-N'])
-        
-    def stop(self):
+        self.current_game = None
+        self.process = None
         self.running = False
-        self.current_instance = None
-        # self.end_time = time.time()
+        self.singleplayer = True
+        self.assigned_port = None
+
+        # Base path for reliability
+        self.base_path = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "../../")
+        )
+
+    # -----------------------------
+    # Load port from Ports.txt
+    # -----------------------------
+    def get_assigned_port(self):
+        ports_file = os.path.join(self.base_path, "Ports.txt")
+
+        try:
+            with open(ports_file, "r") as f:
+                for line in f:
+                    if line.startswith(self.current_game):
+                        return int(line.split("=")[1].strip())
+        except FileNotFoundError:
+            print("Ports.txt not found")
+
+        return None
+
+    # -----------------------------
+    # Launch the game
+    # -----------------------------
+    def run(self, game):
+        self.current_game = game
+        self.assigned_port = self.get_assigned_port()
+
+        game_file = os.path.join(
+            self.base_path,
+            "games",
+            self.current_game,
+            "code",
+            "game",
+            "main.py"
+        )
+
+        if not os.path.exists(game_file):
+            print(f"Game file not found: {game_file}")
+            return
+
+        # Start game process
+        if self.singleplayer:
+            self.process = subprocess.Popen([
+                "python3",
+                game_file,
+                self.username
+            ])
+        else:
+            self.start_port_forward()
+
+            self.process = subprocess.Popen([
+                "python3",
+                game_file,
+                self.username,
+                "--port",
+                str(self.assigned_port)
+            ])
+
+        self.running = True
+
+    # -----------------------------
+    # SSH tunnel setup
+    # -----------------------------
+    def start_port_forward(self):
+        if not self.assigned_port:
+            print("No port assigned for game")
+            return
+
+        subprocess.Popen([
+            "ssh",
+            "-L",
+            f"{self.assigned_port}:localhost:{self.assigned_port}",
+            f"{self.username}@ece-000.eng.temple.edu",
+            "-N"
+        ])
+
+    # -----------------------------
+    # Stop game process
+    # -----------------------------
+    def stop(self):
+        if self.process:
+            self.process.terminate()
+            self.process = None
+
+        self.running = False
+        self.current_game = None
+
+    # -----------------------------
+    # Check if still running
+    # -----------------------------
     def is_running(self):
-        while self.running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.stop()
-    # def get_runtime(self):
-    #     return self.end_time - self.start_time if self.end_time and self.start_time else None
+        return self.process is not None and self.process.poll() is None

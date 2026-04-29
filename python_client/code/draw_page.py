@@ -247,16 +247,25 @@ class DrawMainPage:
         self.screen.blit(textobj, textrect)
 
     def handle_event(self, event):
+
         if event.type == pygame.MOUSEBUTTONDOWN:
-            if self.search_button.collidepoint(event.pos):
+            mouse_pos = event.pos
+
+            if self.search_button.collidepoint(mouse_pos):
                 self.page_manager.set_page(
                     DrawSearchUserPage(self.screen, self.page_manager, self.handler)
                 )
-            if self.profile_button.collidepoint(event.pos):
+
+            elif self.profile_button.collidepoint(mouse_pos):
                 self.page_manager.set_page(
                     DrawUserPage(self.screen, self.page_manager, self.handler, self.username)
                 )
-
+            for game, rect in self.game_buttons:
+                if rect.collidepoint(mouse_pos):
+                    self.page_manager.set_page(
+                        DrawGamePage(self.screen, self.page_manager, self.username, game, self.handler)
+                    )
+                    break
     def draw(self):
         self.screen.fill(DARK_BG)
         draw_stars(self.screen)
@@ -362,15 +371,12 @@ class DrawUserPage:
             self.draw_text("No session data available", FONT, WHITE, WIDTH // 2, 200)
 
 class DrawGamePage:
-    def __init__(self, screen, page_manager, username, game):
+    def __init__(self, screen, page_manager, username, game, handler):
         self.screen = screen
         self.page_manager = page_manager
         self.username = username
         self.game = game
-
-        self.data = GameData(game)
-        self.leaderboard = self.data.get_leaderboard()
-
+        self.handler = handler
         self.run_button = pygame.Rect(300, 200, 200, 50)
         self.back_button = pygame.Rect(300, 270, 200, 50)
 
