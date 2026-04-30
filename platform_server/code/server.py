@@ -104,6 +104,7 @@ class PlatformServer:
             return {'success': success, 'message': msg}
         
         elif request_type == 'game_summary':
+            print("Processing game summary...")
             username = message.get('username')
             score = message.get('score')
             playtime = message.get('playtime')
@@ -116,6 +117,7 @@ class PlatformServer:
                 return {'success': False, 'message': 'Invalid user'}
 
             account.build_session(message)
+            print(f"Built session for {username}: {account.sessions[-1].encode()}")
             print(f"Received summary from C++: {username} scored {score} in {game_name}")
 
             # Update the score leaderboard
