@@ -2,6 +2,8 @@ import pygame
 WIDTH, HEIGHT = 800, 600
 FONT = pygame.font.Font(None, 32)
 BIG_FONT = pygame.font.Font(None, 48)
+SMALL_FONT = pygame.font.Font(None, 24)
+
 # Colors
 BLACK = (10, 10, 20)
 WHITE = (220, 240, 255)

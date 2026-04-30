@@ -142,17 +142,14 @@ class PlatformServer:
             account = self.accounts.accounts.get(username)
             sessions = [session.encode() for session in account.sessions]
             return {'success': True, 'sessions': sessions}
+        
         elif request_type == 'get_leaderboard':
             game_name = message.get('game_name')
-            score_lb = [
-                {"uuid": u, "score": s}
-                for u, s in self.gm.games.get(game_name).score_leader_board.get_top_n(10)
-            ]
-
-            time_lb = [
-                {"uuid": u, "time": t}
-                for u, t in self.gm.games.get(game_name).time_leader_board.get_top_n(10)
-            ]
+            game = self.gm.games.get(game_name)
+            if game is None:
+                return {'success': False, 'message': f'Game "{game_name}" not found'}
+            score_lb = [{"uuid": u, "score": s} for u, s in game.score_leader_board.get_top_n(10)]
+            time_lb  = [{"uuid": u, "time": t}  for u, t  in game.time_leader_board.get_top_n(10)]
             return {'success': True, 'score_leaderboard': score_lb, 'time_leaderboard': time_lb}
         elif request_type == 'get_user_data':
             username = message.get('username')
@@ -165,6 +162,53 @@ class PlatformServer:
                 return {'success': True, 'user_data': user_data}
             else:
                 return {'success': False, 'message': 'User not found'}
+            
+        elif request_type == 'get_player_score':
+            username = message.get('username')
+            game_name = message.get('game_name')
+            game = self.gm.games.get(game_name)
+            if game is None:
+                return {'success': False, 'message': f'Game "{game_name}" not found'}
+            score = game.score_leader_board.get_player_score(username)
+            playtime = game.time_leader_board.get_player_score(username)
+            return {
+                'success': True,
+                'score': score,      # None if not on board
+                'time': playtime
+            }
+
+        elif request_type == 'ranged_query':
+            game_name = message.get('game_name')
+            game = self.gm.games.get(game_name)
+            if game is None:
+                return {'success': False, 'message': f'Game "{game_name}" not found'}
+
+            # Score range
+            min_score = message.get('min_score')
+            max_score = message.get('max_score')
+            score_results = []
+            if min_score is not None and max_score is not None:
+                score_results = [
+                    {"uuid": u, "score": s}
+                    for u, s in game.score_leader_board.ranged_query(int(min_score), int(max_score))
+                ]
+
+            # Time range
+            min_time = message.get('min_time')
+            max_time = message.get('max_time')
+            time_results = []
+            if min_time is not None and max_time is not None:
+                time_results = [
+                    {"uuid": u, "time": t}
+                    for u, t in game.time_leader_board.ranged_query(int(min_time), int(max_time))
+                ]
+
+            return {
+                'success': True,
+                'score_results': score_results,
+                'time_results': time_results
+            }
+                
         elif request_type == 'prefix_search':
             prefix = message.get('prefix')
 
