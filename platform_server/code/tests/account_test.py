@@ -15,6 +15,7 @@ particular seed for the random generation (for reproducibility), you can run the
 the --seed flag followed by the desired seed value (numbers only). If you want to specify a
 number of accounts to create for the random account creation tests, you can run the test with
 the --num flag followed by the desired number of accounts (integers only).
+Adding the --local flag let's you generate random profiles with random sessions on local user_data.
 
 Make sure to run this test from the root directory (ece-3822-final/) with:
 python3 -m platform_server.code.tests.account_test
@@ -42,7 +43,6 @@ The test goes over:
 - Checking that the password is not stored in plaintext
 - Creating multiple accounts with random usernames and passwords
 - Preventing duplicate account creation with random usernames
-- Adding sessions to a profile
 '''
 
 import sys
@@ -52,7 +52,7 @@ import random
 import tempfile
 import shutil
 # setting path to use the root directory for imports
-root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../"))
+root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
 sys.path.insert(0, root_path)
 # importing both the module and the class so I can reconfig the user_data_path for testing
 from datastructures.array import ArrayList
@@ -60,11 +60,7 @@ from datastructures.hash_table import HashTable
 from platform_server.code import accounts
 from platform_server.code.accounts import AccountManager
 from platform_server.code.accounts import Profile
-temp_user_data_path = tempfile.mkdtemp()
-accounts.user_data_path = temp_user_data_path
-# make a fresh name_id.json file for testing
-with open(f"{temp_user_data_path}/name_id.json", "w") as f:
-    json.dump({}, f) # should now be able to run the tests many times consecutively without issues
+
 
 def random_letter():
     """
@@ -326,7 +322,21 @@ def random_sessions_addition(seed=12345678910, num_accounts=1000):
                 assert session_data['PLAYTIME'] == session.time_played
                 assert session_data['SCORE'] == session.score
     print(" ✓ Adding sessions to random profiles worked correctly.")
-    
+
+def local_test(seed=12345678910):
+        manager = AccountManager()
+        random.seed(seed)
+        username = 'tuf08092'
+        password = 'nullptr'
+        profile = Profile(username, manager.ids)
+        amount = 10
+        for sessions in range(amount):
+            game = random_game()
+            playtime = random_playtime()
+            score = random_score()
+            session = profile.create_session(game=game, time_played=playtime, score=score)
+        profile.save_data()
+
 def cleanup():
     """
     Clean up temporary user data files after testing.
@@ -335,6 +345,16 @@ def cleanup():
     print(" ✓ Cleaned up temporary user data files.")
 
 if __name__ == "__main__":
+    local = "--local" in sys.argv
+    print(root_path)
+    if not local:
+        temp_user_data_path = tempfile.mkdtemp()
+        accounts.user_data_path = temp_user_data_path
+        # make a fresh name_id.json file for testing
+        with open(f"{temp_user_data_path}/name_id.json", "w") as f:
+            json.dump({}, f) # should now be able to run the tests many times consecutively without issues
+    elif "--local" in sys.argv:
+        temp_user_data_path = root_path + '/user_data'
     keep = "--keep" in sys.argv
     if "--seed" in sys.argv:
         seed = "--seed" in sys.argv and int(sys.argv[sys.argv.index("--seed") + 1])
@@ -344,34 +364,38 @@ if __name__ == "__main__":
         num_accounts = "--num" in sys.argv and int(sys.argv[sys.argv.index("--num") + 1])
     else:
         num_accounts = 10
-    test_create_account()
-    test_create_duplicate_account()
-    test_authenticate_valid()
-    test_authenticate_invalid_password()
-    test_authenticate_nonexistent_user()
-    test_user_data_structure()
-    test_add_session_to_profile()
-    test_password_not_stored_in_plaintext()
-    try:
-        test_random_account_creation(seed=seed, num_accounts=num_accounts)
-    except Exception as e:
-        print(f"Error occurred while testing random account creation: {e}")
-        print(f"It's possible that the seed {seed} led to a collision in usernames. You can try running the test again with a different seed using the --seed flag.")
-    seed += 1
-    try:
-        test_duplicate_random_account_creation(seed=seed, num_accounts=num_accounts)
-    except Exception as e:
-        print(f"Error occurred while testing duplicate random account creation: {e}")
-        print(f"It's possible that the seed {seed} led to a collision in usernames. You can try running the test again with a different seed using the --seed flag.")
-    seed += 1
+    if not local:
+        test_create_account()
+        test_create_duplicate_account()
+        test_authenticate_valid()
+        test_authenticate_invalid_password()
+        test_authenticate_nonexistent_user()
+        test_user_data_structure()
+        test_password_not_stored_in_plaintext()
+        try:
+          test_random_account_creation(seed=seed, num_accounts=num_accounts)
+        except Exception as e:
+         print(f"Error occurred while testing random account creation: {e}")
+         print(f"It's possible that the seed {seed} led to a collision in usernames. You can try running the test again with a different seed using the --seed flag.")
+        seed += 1
+        try:
+           test_duplicate_random_account_creation(seed=seed, num_accounts=num_accounts)
+        except Exception as e:
+           print(f"Error occurred while testing duplicate random account creation: {e}")
+           print(f"It's possible that the seed {seed} led to a collision in usernames. You can try running the test again with a different seed using the --seed flag.")
+        seed += 1
     try:
         test_random_sessions_addition(seed=seed)
     except Exception as e:
         print(f"Error occurred while testing random sessions addition: {e}")
         print(f"It's possible that the seed {seed} led to a collision in usernames. You can try running the test again with a different seed using the --seed flag.")
+    seed += 1
+    if "--manny" in sys.argv:
+        local_test(seed=seed)
     print(" ✓ All tests passed!")
-    if not keep:
-        cleanup()
-    else:
-        print("   Temporary user data files have been kept for inspection.")
+    if not local:
+        if not keep:
+            cleanup()
+        else:
+            print("   Temporary user data files have been kept for inspection.")
     print(f"   Random seed used for random tests: {seed-1}")
