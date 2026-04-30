@@ -35,7 +35,7 @@ class Profile:
         self.next_session_id += 1
         return session
     def build_session(self, summary):
-        game = summary['game']
+        game = summary['game_name']
         time_played = summary['playtime']
         score = summary['score']
         session = self.create_session(game,time_played,score)
