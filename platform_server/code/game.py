@@ -53,11 +53,16 @@ class Game_manager:
         return self.games.get(new_title)
     
     def add_score_lb(self, game_name, value, user):
-        if game_name.lower() in self.games:
-            self.games.get(game_name.lower()).score_leader_board.add_score(user, value)
-    
-    def add_time_lb(self, game_name, time, user):
-        if game_name.lower() in self.games:
-            self.games.get(game_name.lower()).time_leader_board.add_score(user, time)
+        formatted_name = game_name.replace(" ", "_").lower()
+        
+        if formatted_name in self.games:
+            self.games.get(formatted_name).score_leader_board.add_score(user, value)
+        else:
+            print(f"Debug: Game '{formatted_name}' not found in registry!")
 
+    def add_time_lb(self, game_name, time, user):
+        formatted_name = game_name.replace(" ", "_").lower()
+        
+        if formatted_name in self.games:
+            self.games.get(formatted_name).time_leader_board.add_score(user, time)
     
