@@ -15,6 +15,7 @@ particular seed for the random generation (for reproducibility), you can run the
 the --seed flag followed by the desired seed value (numbers only). If you want to specify a
 number of accounts to create for the random account creation tests, you can run the test with
 the --num flag followed by the desired number of accounts (integers only).
+Adding the --local flag let's you generate random profiles with random sessions on local user_data.
 
 Make sure to run this test from the root directory (ece-3822-final/) with:
 python3 -m platform_server.code.tests.account_test
@@ -328,8 +329,6 @@ def local_test(seed=12345678910):
         username = 'tuf08092'
         password = 'nullptr'
         profile = Profile(username, manager.ids)
-        print(profile)
-        print(profile.sessions) 
         amount = 10
         for sessions in range(amount):
             game = random_game()
@@ -365,32 +364,33 @@ if __name__ == "__main__":
         num_accounts = "--num" in sys.argv and int(sys.argv[sys.argv.index("--num") + 1])
     else:
         num_accounts = 10
-    test_create_account()
-    test_create_duplicate_account()
-    test_authenticate_valid()
-    test_authenticate_invalid_password()
-    test_authenticate_nonexistent_user()
-    test_user_data_structure()
-    test_password_not_stored_in_plaintext()
-    try:
-        test_random_account_creation(seed=seed, num_accounts=num_accounts)
-    except Exception as e:
-        print(f"Error occurred while testing random account creation: {e}")
-        print(f"It's possible that the seed {seed} led to a collision in usernames. You can try running the test again with a different seed using the --seed flag.")
-    seed += 1
-    try:
-        test_duplicate_random_account_creation(seed=seed, num_accounts=num_accounts)
-    except Exception as e:
-        print(f"Error occurred while testing duplicate random account creation: {e}")
-        print(f"It's possible that the seed {seed} led to a collision in usernames. You can try running the test again with a different seed using the --seed flag.")
-    seed += 1
+    if not local:
+        test_create_account()
+        test_create_duplicate_account()
+        test_authenticate_valid()
+        test_authenticate_invalid_password()
+        test_authenticate_nonexistent_user()
+        test_user_data_structure()
+        test_password_not_stored_in_plaintext()
+        try:
+          test_random_account_creation(seed=seed, num_accounts=num_accounts)
+        except Exception as e:
+         print(f"Error occurred while testing random account creation: {e}")
+         print(f"It's possible that the seed {seed} led to a collision in usernames. You can try running the test again with a different seed using the --seed flag.")
+        seed += 1
+        try:
+           test_duplicate_random_account_creation(seed=seed, num_accounts=num_accounts)
+        except Exception as e:
+           print(f"Error occurred while testing duplicate random account creation: {e}")
+           print(f"It's possible that the seed {seed} led to a collision in usernames. You can try running the test again with a different seed using the --seed flag.")
+        seed += 1
     try:
         test_random_sessions_addition(seed=seed)
     except Exception as e:
         print(f"Error occurred while testing random sessions addition: {e}")
         print(f"It's possible that the seed {seed} led to a collision in usernames. You can try running the test again with a different seed using the --seed flag.")
     seed += 1
-    if "--local" in sys.argv:
+    if "--manny" in sys.argv:
         local_test(seed=seed)
     print(" ✓ All tests passed!")
     if not local:
