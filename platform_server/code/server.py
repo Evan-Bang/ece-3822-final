@@ -94,6 +94,7 @@ class PlatformServer:
 
     async def process_message(self, message): # processes incoming client messages and generates appropriate responses
         request_type = message.get('type')
+        print(message)
         
         # Aunthentication and account management
         if request_type == 'login':
