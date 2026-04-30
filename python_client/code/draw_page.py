@@ -174,11 +174,11 @@ class DrawCreateAccountPage:
                 self.active_box = None
 
             if self.create_button.collidepoint(event.pos):
-                if not self.handler.connected:
-                    self.handler.connect()
+                
                 user = UserData(self.handler)
                 user.create_account(self.username_text, self.password_text)
-
+                if not self.handler.connected:
+                    self.handler.connect(self.username_text)
                 if user.user_id is not None:
                     print("Account created successfully")
                     self.page_manager.set_page(DrawMainPage(self.screen, self.page_manager, self.username_text, self.handler))
