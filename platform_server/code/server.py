@@ -110,7 +110,7 @@ class PlatformServer:
             playtime = message.get('playtime')
             game_name = message.get('game_name', 'default_game') 
             username = message.get('username')
-            account = self.accounts.accounts.get(username)
+            account = self.accounts.get_profile(username)
 
             if account is None:
                 print(f"Account not found for username: {username}")

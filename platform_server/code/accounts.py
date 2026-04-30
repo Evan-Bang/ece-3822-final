@@ -202,6 +202,20 @@ class AccountManager:
             return self.usernames.find_words(prefix)
         else:
             return ArrayList()
+    def get_profile(self, username):
+        # Check if they are already in the "active" memory
+        account = self.accounts.get(username)
+        if account:
+            return account
+            
+        # If not, check if they exist in our ID registry
+        if username in self.ids:
+            # Load the profile from the disk into the HashTable
+            new_profile = Profile(username, self.ids)
+            self.accounts.set(username, new_profile)
+            return new_profile
+            
+        return None
 if __name__ == "__main__":
     username1 = "tuf08092"
     username2 = "tut69764"
