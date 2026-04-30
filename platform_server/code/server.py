@@ -141,7 +141,7 @@ class PlatformServer:
         # get sessions
         elif request_type == 'get_sessions':
             username = message.get('username')
-            account = self.accounts.accounts.get(username)
+            account = self.accounts.get_profile(username)
             sessions = [session.encode() for session in account.sessions]
             return {'success': True, 'sessions': sessions}
         
