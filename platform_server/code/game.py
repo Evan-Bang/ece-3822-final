@@ -21,7 +21,7 @@ class Game:
         self.filepath = filepath
         self.score_leader_board = Leaderboard()
         self.time_leader_board = Leaderboard()
-
+        
 class Game_manager:
     def __init__(self, game_folder):
         # Key: Game Title (String), Value: Game Object
