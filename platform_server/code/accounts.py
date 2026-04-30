@@ -57,12 +57,12 @@ class Profile:
                         # Extract the actual ID from the key "SESSION_X"
                         current_id = int(session_key.split('_')[1])
                         session_data = Session(
-                            session['GAME'],
+                          session.get('GAME', 'Unknown'),
                             self.username,
-                            session['PLAYTIME'],
-                            session['SCORE'],
+                            session.get('PLAYTIME', 0),
+                            session.get('SCORE', 0),
                             current_id,
-                            session.get('DATE')
+                            session.get('DATE', None)
                         )
                         self.sessions.append(session_data)
                         if current_id >= max_id:
