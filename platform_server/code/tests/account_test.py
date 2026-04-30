@@ -54,9 +54,12 @@ import shutil
 root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
 sys.path.insert(0, root_path)
 # importing both the module and the class so I can reconfig the user_data_path for testing
+from datastructures.array import ArrayList
+from datastructures.hash_table import HashTable
 from platform_server.code import accounts
 from platform_server.code.accounts import AccountManager
 from platform_server.code.accounts import Profile
+
 
 def random_letter():
     """
@@ -84,6 +87,30 @@ def random_password():
     random_number = f"{random.randint(1, 99999):05d}"
     random_password = random_letters + random_number
     return random_password
+
+def random_game():
+    """
+    Pick a random game from our list of games
+    output string: one of "Thellusoma", "Surviving 1111", "Lizzys Adventure"
+    """
+    random_game = random.choice(["Thellusoma", "Surviving 1111", "Lizzys Adventure"])
+    return random_game
+
+def random_score():
+    """
+    Generate a random score for testing.
+    output integer: an integer between 0 and 150, in increments of 10
+    """
+    random_score = random.randrange(0, 151, 10)
+    return random_score
+
+def random_playtime():
+    """
+    Generate a random playtime for testing.
+    output integer: an integer between 0 and 999
+    """
+    random_playtime = random.randint(0, 999)
+    return random_playtime
 
 def test_create_account():
     """
