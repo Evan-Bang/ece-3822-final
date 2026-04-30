@@ -1078,34 +1078,34 @@ class DrawSearchUserPage:
             y += 45
 
     def handle_event(self, event):
-    if event.type == pygame.MOUSEBUTTONDOWN:
-        if self.back_button.collidepoint(event.pos):
-            self.page_manager.set_page(
-                DrawMainPage(self.screen, self.page_manager,
-                             self.page_manager.username, self.handler))
-            return
-
-        if self.input_rect.collidepoint(event.pos):
-            self.active = True
-        else:
-            self.active = False
-
-        for name, rect in self.suggestion_rects:
-            if rect.collidepoint(event.pos):
-                self.text = name
-                self.update_suggestions()
-
-    if event.type == pygame.KEYDOWN and self.active:
-        if event.key == pygame.K_RETURN:
-            if self.text in self.suggestions:
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.back_button.collidepoint(event.pos):
                 self.page_manager.set_page(
-                    DrawUserPage(self.screen, self.page_manager, self.handler, self.text))
-        elif event.key == pygame.K_BACKSPACE:
-            self.text = self.text[:-1]
-            self.update_suggestions()
-        else:
-            self.text += event.unicode
-            self.update_suggestions()
+                    DrawMainPage(self.screen, self.page_manager,
+                                self.page_manager.username, self.handler))
+                return
+
+            if self.input_rect.collidepoint(event.pos):
+                self.active = True
+            else:
+                self.active = False
+
+            for name, rect in self.suggestion_rects:
+                if rect.collidepoint(event.pos):
+                    self.text = name
+                    self.update_suggestions()
+
+        if event.type == pygame.KEYDOWN and self.active:
+            if event.key == pygame.K_RETURN:
+                if self.text in self.suggestions:
+                    self.page_manager.set_page(
+                        DrawUserPage(self.screen, self.page_manager, self.handler, self.text))
+            elif event.key == pygame.K_BACKSPACE:
+                self.text = self.text[:-1]
+                self.update_suggestions()
+            else:
+                self.text += event.unicode
+                self.update_suggestions()
     def draw(self):
         self.screen.fill(DARK_BG)
         draw_stars(self.screen)
