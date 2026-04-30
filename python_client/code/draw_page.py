@@ -45,6 +45,7 @@ class DrawLoginPage:
         self.active_box = None
         self.username_text = ''
         self.password_text = ''
+        self.error_message = ''
 
         self.login_button = pygame.Rect(300, 330, 200, 40)
         self.create_button = pygame.Rect(300, 380, 200, 40)
@@ -70,20 +71,28 @@ class DrawLoginPage:
                 self.active_box = None
 
             if self.login_button.collidepoint(event.pos):
-                if not self.handler.connected:
-                    self.handler.connect(self.username_text)
-                user = UserData(self.handler)
-                user.login(self.username_text, self.password_text)
+                self.error_message = ''  # clear previous error
+                try:
+                    if not self.handler.connected:
+                        self.handler.connect(self.username_text)
+                    user = UserData(self.handler)
+                    user.login(self.username_text, self.password_text)
 
-                if user.logged_in:
-                    print("Login successful")
-                    self.page_manager.username = self.username_text
-                    self.page_manager.set_page(DrawMainPage(self.screen, self.page_manager, self.username_text, self.handler))
-                else:
-                    print("Login failed")
+                    if getattr(user, 'logged_in', False):
+                        self.page_manager.username = self.username_text
+                        self.page_manager.set_page(
+                            DrawMainPage(self.screen, self.page_manager, self.username_text, self.handler)
+                        )
+                    else:
+                        self.error_message = "Invalid username or password."
+                except Exception as e:
+                    print(f"Login error: {e}")
+                    self.error_message = "Could not connect to server."
 
             if self.create_button.collidepoint(event.pos):
-                self.page_manager.set_page(DrawCreateAccountPage(self.screen, self.page_manager, self.handler))
+                self.page_manager.set_page(
+                    DrawCreateAccountPage(self.screen, self.page_manager, self.handler)
+                )
 
         if event.type == pygame.KEYDOWN:
             if self.active_box == 'username':
@@ -91,7 +100,6 @@ class DrawLoginPage:
                     self.username_text = self.username_text[:-1]
                 else:
                     self.username_text += event.unicode
-
             elif self.active_box == 'password':
                 if event.key == pygame.K_BACKSPACE:
                     self.password_text = self.password_text[:-1]
@@ -127,6 +135,8 @@ class DrawLoginPage:
 
         self.draw_text("Login", FONT, WHITE, self.login_button.centerx, self.login_button.centery)
         self.draw_text("Create Account", FONT, WHITE, self.create_button.centerx, self.create_button.centery)
+        if self.error_message:
+            self.draw_text(self.error_message, FONT, (255, 80, 80), WIDTH // 2, 440)
 
 class DrawCreateAccountPage:
     def __init__(self, screen, page_manager, handler):
@@ -305,6 +315,8 @@ class DrawGamePage:
         self.username     = username
         self.game         = game
         self.handler      = handler
+        self.score_scroll = 0
+        self.time_scroll  = 0
 
         self.run_button     = pygame.Rect(240, 190, 160, 42)
         self.back_button    = pygame.Rect(420, 190, 160, 42)
@@ -413,10 +425,10 @@ class DrawGamePage:
             self.draw_text(placeholder, SMALL_FONT, MUTED, rect.x + 6, rect.centery, align="left")
 
     # --------------------------------------------------------------- panels
-    def draw_panel(self, title, entries, player_val, x, y, w, h, value_key, format_fn=None):
-        is_time  = value_key == "time"
-        hdr_col  = BLUE if is_time else PURP
-        val_col  = BLUE if is_time else PURP
+    def draw_panel(self, title, entries, player_val, x, y, w, h, value_key, format_fn=None, scroll_offset=0):
+        is_time = value_key == "time"
+        hdr_col = BLUE if is_time else PURP
+        val_col = BLUE if is_time else PURP
 
         pygame.draw.rect(self.screen, PANEL_BG, (x, y, w, h), border_radius=10)
         pygame.draw.rect(self.screen, BORDER,   (x, y, w, h), 1, border_radius=10)
@@ -425,43 +437,70 @@ class DrawGamePage:
         self.draw_text(title, FONT, hdr_col, x + w // 2, y + 20)
         if player_val is not None:
             pv_str = format_fn(player_val) if format_fn else str(player_val)
-            self.draw_text(f"Your best: {pv_str}", SMALL_FONT, OK_COL,
-                           x + w // 2, y + 36)
+            self.draw_text(f"Your best: {pv_str}", SMALL_FONT, OK_COL, x + w // 2, y + 36)
             line_y = y + 48
         else:
             line_y = y + 34
 
         pygame.draw.line(self.screen, BORDER, (x + 12, line_y), (x + w - 12, line_y))
 
-        row_y = line_y + 14
-        row_h = 28
-
         if not entries:
-            self.draw_text("No data yet", SMALL_FONT, MUTED, x + w // 2, row_y + 14)
+            self.draw_text("No data yet", SMALL_FONT, MUTED, x + w // 2, line_y + 20)
             return
 
-        for i, entry in enumerate(entries[:8]):
+        row_h        = 28
+        content_top  = line_y + 8          # where rows start inside the panel
+        visible_h    = y + h - content_top - 8
+        total_h      = len(entries) * row_h
+
+        # Clamp scroll
+        max_scroll = max(0, total_h - visible_h)
+        scroll_offset = max(0, min(scroll_offset, max_scroll))
+
+        # --- Draw rows onto a temporary surface, then blit clipped ---
+        row_surf = pygame.Surface((w, total_h), pygame.SRCALPHA)
+
+        for i, entry in enumerate(entries):
             is_player = entry.get("uuid") == self.username
-            row_rect  = pygame.Rect(x + 8, row_y - 4, w - 16, row_h - 2)
+            ry        = i * row_h
+            row_rect  = pygame.Rect(8, ry, w - 16, row_h - 2)
 
             if is_player:
-                pygame.draw.rect(self.screen, ROW_HL, row_rect, border_radius=4)
-                pygame.draw.rect(self.screen, HL_BORDER, row_rect, 1, border_radius=4)
+                pygame.draw.rect(row_surf, ROW_HL,    row_rect, border_radius=4)
+                pygame.draw.rect(row_surf, HL_BORDER, row_rect, 1, border_radius=4)
             elif i % 2 == 0:
-                pygame.draw.rect(self.screen, ROW_ALT, row_rect, border_radius=4)
+                pygame.draw.rect(row_surf, ROW_ALT, row_rect, border_radius=4)
 
             rank_col = MEDAL[i] if i < 3 else MUTED
-            self.draw_text(f"{i+1}", SMALL_FONT, rank_col, x + 22, row_y + 10)
+            cy = ry + row_h // 2
 
-            name_col = WHITE if is_player else NAME_COL
-            self.draw_text(entry.get("uuid", "???"), SMALL_FONT, name_col,
-                           x + 38, row_y + 10, align="left")
+            rank_surf = SMALL_FONT.render(f"{i+1}", True, rank_col)
+            row_surf.blit(rank_surf, rank_surf.get_rect(midleft=(14, cy)))
 
-            raw = entry.get(value_key, 0)
+            name_col  = WHITE if is_player else NAME_COL
+            name_surf = SMALL_FONT.render(entry.get("uuid", "???"), True, name_col)
+            row_surf.blit(name_surf, name_surf.get_rect(midleft=(32, cy)))
+
+            raw     = entry.get(value_key, 0)
             display = format_fn(raw) if format_fn else str(raw)
-            self.draw_text(display, SMALL_FONT, val_col, x + w - 12, row_y + 10, align="right")
+            val_surf = SMALL_FONT.render(display, True, val_col)
+            row_surf.blit(val_surf, val_surf.get_rect(midright=(w - 10, cy)))
 
-            row_y += row_h
+        # Clip and blit
+        clip_area = pygame.Rect(0, scroll_offset, w, visible_h)
+        self.screen.blit(row_surf, (x, content_top), area=clip_area)
+
+        # --- Scrollbar ---
+        if total_h > visible_h:
+            bar_x     = x + w - 6
+            bar_track = pygame.Rect(bar_x, content_top, 4, visible_h)
+            pygame.draw.rect(self.screen, BORDER, bar_track, border_radius=2)
+
+            thumb_h   = max(20, int(visible_h * visible_h / total_h))
+            thumb_pct = scroll_offset / max_scroll if max_scroll else 0
+            thumb_y   = content_top + int(thumb_pct * (visible_h - thumb_h))
+            thumb     = pygame.Rect(bar_x, thumb_y, 4, thumb_h)
+            pygame.draw.rect(self.screen, NEON_BLUE, thumb, border_radius=2)
 
     def draw_range_section(self, x, y, w):
         # Labels
@@ -538,6 +577,19 @@ class DrawGamePage:
                 self.do_range_query()
             elif event.unicode.isdigit():          # numbers only
                 self.range_inputs[key] += event.unicode
+        elif event.type == pygame.MOUSEWHEEL:
+            mouse_pos = pygame.mouse.get_pos()
+            panel_w = (WIDTH - 60) // 2
+            panel_y = 248
+            panel_h = 300
+
+            left_panel  = pygame.Rect(20,          panel_y, panel_w, panel_h)
+            right_panel = pygame.Rect(30 + panel_w, panel_y, panel_w, panel_h)
+
+            if left_panel.collidepoint(mouse_pos):
+                self.score_scroll = max(0, self.score_scroll - event.y * 20)
+            elif right_panel.collidepoint(mouse_pos):
+                self.time_scroll  = max(0, self.time_scroll  - event.y * 20)
 
     # ----------------------------------------------------------------- draw
     def draw(self):
@@ -593,7 +645,8 @@ class DrawGamePage:
             y=panel_y, 
             w=panel_w, 
             h=panel_h,
-            value_key="score"
+            value_key="score",
+            scroll_offset=self.score_scroll
         )
         
         # Right Panel: Survival Time
@@ -606,7 +659,8 @@ class DrawGamePage:
             w=panel_w, 
             h=panel_h,
             value_key="time", 
-            format_fn=self.format_time
+            format_fn=self.format_time,
+            scroll_offset=self.time_scroll      
         )
 
         # 6. Draw Range Query Input Section (Bottom)

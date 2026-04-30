@@ -160,8 +160,8 @@ class PlatformServer:
             game = self.gm.games.get(game_name)
             if game is None:
                 return {'success': False, 'message': f'Game "{game_name}" not found'}
-            score_lb = [{"uuid": u, "score": s} for u, s in game.score_leader_board.get_top_n(10)]
-            time_lb  = [{"uuid": u, "time": t}  for u, t  in game.time_leader_board.get_top_n(10)]
+            score_lb = [{"uuid": u, "score": s} for u, s in game.score_leader_board.get_top_n(100)]
+            time_lb  = [{"uuid": u, "time": t}  for u, t  in game.time_leader_board.get_top_n(100)]
             return {'success': True, 'score_leaderboard': score_lb, 'time_leaderboard': time_lb}
         
         elif request_type == 'get_user_data':
