@@ -95,55 +95,5 @@ class Leaderboard:
         """
         return self.score_table.get(uuid)
 
-
-    def load_from_json(self, file_path):
-        """
-        Loads scores from a JSON file and adds them to the leaderboard.
-        Expected JSON format: {"uuid1": score_1, "uuid2": score_2}
-        """
-        try:
-            with open(file_path, 'r') as f:
-                data = json.load(f)
-            # There is a python built in here but I think its fine as we are calling from library.
-            for uuid, score in data.items():
-                self.add_score(uuid, int(score))
-                
-        except FileNotFoundError:
-            print(f"Error: The file {file_path} was not found.")
-        except json.JSONDecodeError:
-            print(f"Error: Failed to decode JSON from {file_path}.")
-
-
-    def save_to_json(self, file_path):
-        """
-        Saves the current scores to a JSON file using the BST and ArrayList.
-        """
-        try:
-            all_data = self.get_all_sorted()
-            
-            # Build the JSON
-            json_output = "{\n"
-            
-            for i in range(len(all_data)):
-                uuid, score = all_data[i]
-                # Format: "uuid": score
-                line = f'    "{uuid}": {score}'
-                
-                # Add a comma if it's not the last element
-                if i < len(all_data) - 1:
-                    line += ","
-                
-                json_output += line + "\n"
-            
-            json_output += "}"
-
-            with open(file_path, 'w') as f:
-                f.write(json_output)
-                
-            return True
-        except Exception as e:
-            print(f"Error saving: {e}")
-            return False
-
     def __len__(self):
         return self.score_table.size()

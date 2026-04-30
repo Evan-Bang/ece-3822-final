@@ -46,7 +46,7 @@ class PlatformServer:
         for username in self.accounts.ids.items():
             prof = self.accounts.get_profile(username[0])
             for session in prof.sessions:
-                game = session.game
+                game = session.game.replace(" ", "_").lower()
                 username = session.username
                 score = session.score
                 time_played = session.time_played
