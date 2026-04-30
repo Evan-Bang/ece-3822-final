@@ -50,8 +50,8 @@ class PlatformServer:
                 username = session.username
                 score = session.score
                 time_played = session.time_played
-                self.gm.add_score_lb(game, score, username)
-                self.gm.add_time_lb(game, time_played, username)
+                self.gm.add_score_lb(game, int(score), username)
+                self.gm.add_time_lb(game, int(float(time_played)), username)
         # Clients
         self.clients = ArrayList() # list of connected clients
 
