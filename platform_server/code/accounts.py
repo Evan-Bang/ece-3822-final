@@ -28,19 +28,23 @@ class Profile:
         self.next_session_id = 1
         self.password = None
         self.initialize_data()
+
     def add_session(self, session):
         self.sessions.append(session)
+
     def create_session(self, game, time_played, score, date = None):
         session = Session(game, self.username, time_played, score, self.next_session_id, date)
         self.add_session(session)
         self.next_session_id += 1
         return session
+    
     def build_session(self, summary, date = None):
-        game = summary['game_name']
-        time_played = summary['playtime']
-        score = summary['score']
-        session = self.create_session(game,time_played,score,date)
+        game = summary.get('game_name', 'Unknown Game')
+        time_played = summary.get('playtime', 0) # Default to 0 seconds
+        score = summary.get('score', 0)
+        session = self.create_session(game,time_played,score, date)
         return session
+    
     def initialize_data(self):
         # Load user data from file or create new file if it doesn't exist
         if self.user_id:
@@ -93,7 +97,13 @@ class Session:
         self.time_played = time_played
         self.score = score
         self.id = id
-        self.date = date if isinstance(date, str) else (date.today().isoformat() if date is None else str(date))
+        if isinstance(date, str):
+            self.date = date
+        elif date is None:
+            self.date = dt_date.today().isoformat()
+        else:
+            # This handles cases where a date object is passed directly
+            self.date = str(date)
     def encode(self):
         return {"GAME":self.game,"USERNAME":self.username,"PLAYTIME":self.time_played,"SCORE":self.score, "DATE": self.date}
 class AccountManager:
