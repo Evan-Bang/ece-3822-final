@@ -1107,27 +1107,27 @@ class DrawSearchUserPage:
             self.text += event.unicode
             self.update_suggestions()
     def draw(self):
-    self.screen.fill(DARK_BG)
-    draw_stars(self.screen)
-    mouse_pos = pygame.mouse.get_pos()
+        self.screen.fill(DARK_BG)
+        draw_stars(self.screen)
+        mouse_pos = pygame.mouse.get_pos()
 
-    self.draw_text("Search Users", BIG_FONT, NEON_BLUE, WIDTH // 2, 80)
+        self.draw_text("Search Users", BIG_FONT, NEON_BLUE, WIDTH // 2, 80)
 
-    # Back button
-    draw_glow_rect(self.screen, self.back_button, PANEL,
-                   NEON_BLUE if self.back_button.collidepoint(mouse_pos) else NEON_PURPLE)
-    self.draw_text("Back", FONT, WHITE,
-                   self.back_button.centerx, self.back_button.centery)
+        # Back button
+        draw_glow_rect(self.screen, self.back_button, PANEL,
+                    NEON_BLUE if self.back_button.collidepoint(mouse_pos) else NEON_PURPLE)
+        self.draw_text("Back", FONT, WHITE,
+                    self.back_button.centerx, self.back_button.centery)
 
-    # Input box
-    draw_glow_rect(self.screen, self.input_rect, PANEL,
-                   NEON_BLUE if self.active else NEON_PURPLE)
-    text_surface = FONT.render(self.text, True, WHITE)
-    self.screen.blit(text_surface, (self.input_rect.x + 10, self.input_rect.y + 10))
+        # Input box
+        draw_glow_rect(self.screen, self.input_rect, PANEL,
+                    NEON_BLUE if self.active else NEON_PURPLE)
+        text_surface = FONT.render(self.text, True, WHITE)
+        self.screen.blit(text_surface, (self.input_rect.x + 10, self.input_rect.y + 10))
 
-    # Suggestions
-    for name, rect in self.suggestion_rects:
-        pygame.draw.rect(self.screen, PANEL, rect, border_radius=6)
-        pygame.draw.rect(self.screen, NEON_PURPLE, rect, 1, border_radius=6)
-        text_surface = SMALL_FONT.render(name, True, WHITE)
-        self.screen.blit(text_surface, (rect.x + 10, rect.y + 10))
+        # Suggestions
+        for name, rect in self.suggestion_rects:
+            pygame.draw.rect(self.screen, PANEL, rect, border_radius=6)
+            pygame.draw.rect(self.screen, NEON_PURPLE, rect, 1, border_radius=6)
+            text_surface = SMALL_FONT.render(name, True, WHITE)
+            self.screen.blit(text_surface, (rect.x + 10, rect.y + 10))
