@@ -155,7 +155,7 @@ class PlatformServer:
             return {'success': True, 'score_leaderboard': score_lb, 'time_leaderboard': time_lb}
         elif request_type == 'get_user_data':
             username = message.get('username')
-            account = self.accounts.accounts.get(username)
+            account = self.accounts.get_profile(username)
             if account:
                 user_data = {
                     'username': account.username,
