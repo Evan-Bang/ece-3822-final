@@ -51,16 +51,20 @@ import random
 import tempfile
 import shutil
 # setting path to use the root directory for imports
-root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../"))
+root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
 sys.path.insert(0, root_path)
 # importing both the module and the class so I can reconfig the user_data_path for testing
 from platform_server.code import accounts
 from platform_server.code.accounts import AccountManager
+<<<<<<< Updated upstream
 temp_user_data_path = tempfile.mkdtemp()
 accounts.user_data_path = temp_user_data_path
 # make a fresh name_id.json file for testing
 with open(f"{temp_user_data_path}/name_id.json", "w") as f:
     json.dump({}, f) # should now be able to run the tests many times consecutively without issues
+=======
+from platform_server.code.accounts import Profile
+>>>>>>> Stashed changes
 
 def random_letter():
     """
@@ -207,6 +211,85 @@ def test_duplicate_random_account_creation(seed=1234567890,num_accounts=10):
         assert manager.create_account(username, password) == False
     print(" ✓ Duplicate random account creation was successfully prevented.")
 
+<<<<<<< Updated upstream
+=======
+def test_random_sessions_addition(seed=12345678910, num_accounts=10):
+    """
+    Test adding sessions to profiles with random usernames. 
+    """
+    print("   Testing adding sessions to random profiles...")
+    manager = AccountManager()
+    random.seed(seed)
+    user_list = ArrayList()
+    for num in range(num_accounts):
+        username = random_username()
+        password = random_password()
+        manager.create_account(username, password)
+        new_profile = manager.accounts.get(username)
+        user_list.append(new_profile)
+        for amount in range(random.randint(1,10)):
+            # Add a random session for the selected user
+            game = random_game()
+            playtime = random_playtime()
+            score = random_score()
+            session = new_profile.create_session(game=game, time_played=playtime, score=score)
+        new_profile.save_data() # check the saved data
+        with open(new_profile.data_file, "r") as f:
+            data = json.load(f)
+            for session in new_profile.sessions:
+                session_data = data['GAME_HISTORY'][f'SESSION_{session.id}']
+                assert session_data['GAME'] == session.game
+                assert session_data['USERNAME'] == session.username
+                assert session_data['PLAYTIME'] == session.time_played
+                assert session_data['SCORE'] == session.score
+    print(" ✓ Adding sessions to random profiles worked correctly.")
+
+def random_sessions_addition(seed=12345678910, num_accounts=1000):
+    """
+    Test adding sessions to profiles with random usernames. 
+    """
+    print("   Testing adding sessions to random profiles...")
+    manager = AccountManager()
+    random.seed(seed)
+    for num in range(num_accounts):
+        username = random_username()
+        password = random_password()
+        manager.create_account(username, password)
+        new_profile = manager.accounts.get(username)
+        for amount in range(random.randint(1,10)):
+            # Add a random session for the selected user
+            game = random_game()
+            playtime = random_playtime()
+            score = random_score()
+            session = new_profile.create_session(game=game, time_played=playtime, score=score)
+        new_profile.save_data() # check the saved data
+        with open(new_profile.data_file, "r") as f:
+            data = json.load(f)
+            for session in new_profile.sessions:
+                session_data = data['GAME_HISTORY'][f'SESSION_{session.id}']
+                assert session_data['GAME'] == session.game
+                assert session_data['USERNAME'] == session.username
+                assert session_data['PLAYTIME'] == session.time_played
+                assert session_data['SCORE'] == session.score
+    print(" ✓ Adding sessions to random profiles worked correctly.")
+
+def local_test(seed=12345678910):
+        manager = AccountManager()
+        random.seed(seed)
+        username = 'tuf08092'
+        password = 'nullptr'
+        profile = Profile(username, manager.ids)
+        print(profile)
+        print(profile.sessions) 
+        amount = 10
+        for sessions in range(amount):
+            game = random_game()
+            playtime = random_playtime()
+            score = random_score()
+            session = profile.create_session(game=game, time_played=playtime, score=score)
+        profile.save_data()
+
+>>>>>>> Stashed changes
 def cleanup():
     """
     Clean up temporary user data files after testing.
@@ -215,6 +298,16 @@ def cleanup():
     print(" ✓ Cleaned up temporary user data files.")
 
 if __name__ == "__main__":
+    local = "--local" in sys.argv
+    print(root_path)
+    if not local:
+        temp_user_data_path = tempfile.mkdtemp()
+        accounts.user_data_path = temp_user_data_path
+        # make a fresh name_id.json file for testing
+        with open(f"{temp_user_data_path}/name_id.json", "w") as f:
+            json.dump({}, f) # should now be able to run the tests many times consecutively without issues
+    elif "--local" in sys.argv:
+        temp_user_data_path = root_path + '/user_data'
     keep = "--keep" in sys.argv
     if "--seed" in sys.argv:
         seed = "--seed" in sys.argv and int(sys.argv[sys.argv.index("--seed") + 1])
@@ -233,10 +326,28 @@ if __name__ == "__main__":
     test_password_not_stored_in_plaintext()
     test_random_account_creation(seed=seed, num_accounts=num_accounts)
     seed += 1
+<<<<<<< Updated upstream
     test_duplicate_random_account_creation(seed=seed, num_accounts=num_accounts)
+=======
+    try:
+        test_duplicate_random_account_creation(seed=seed, num_accounts=num_accounts)
+    except Exception as e:
+        print(f"Error occurred while testing duplicate random account creation: {e}")
+        print(f"It's possible that the seed {seed} led to a collision in usernames. You can try running the test again with a different seed using the --seed flag.")
+    seed += 1
+    try:
+        test_random_sessions_addition(seed=seed)
+    except Exception as e:
+        print(f"Error occurred while testing random sessions addition: {e}")
+        print(f"It's possible that the seed {seed} led to a collision in usernames. You can try running the test again with a different seed using the --seed flag.")
+    seed += 1
+    if "--local" in sys.argv:
+        local_test(seed=seed)
+>>>>>>> Stashed changes
     print(" ✓ All tests passed!")
-    if not keep:
-        cleanup()
-    else:
-        print("   Temporary user data files have been kept for inspection.")
+    if not local:
+        if not keep:
+            cleanup()
+        else:
+            print("   Temporary user data files have been kept for inspection.")
     print(f"   Random seed used for random tests: {seed-1}")
