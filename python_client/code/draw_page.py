@@ -1041,7 +1041,6 @@ class DrawSearchUserPage:
         self.handler = handler
         self.back_button = pygame.Rect(40, 40, 120, 42)
         self.input_rect = pygame.Rect(300, 150, 300, 50)
-        self.back_button = pygame.Rect(40, 40, 120, 42)
         self.text = ''
         self.active = False
 
@@ -1079,82 +1078,56 @@ class DrawSearchUserPage:
             y += 45
 
     def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if self.back_button.collidepoint(event.pos):
-                self.page_manager.set_page(
-                    DrawMainPage(self.screen, self.page_manager, self.page_manager.username, self.handler)
-                )
-                return
-
-            if self.input_rect.collidepoint(event.pos):
-                self.active = True
-            else:
-                self.active = False
-
-            # Click suggestion -> autofill
-            for name, rect in self.suggestion_rects:
-                if rect.collidepoint(event.pos):
-                    self.text = name
-                    self.update_suggestions()
-
-        elif event.type == pygame.KEYDOWN and self.active:
-            if event.key == pygame.K_RETURN:
-                if self.text in self.suggestions:
-                    self.page_manager.set_page(
-                        DrawUserPage(self.screen, self.page_manager, self.handler, self.text)
-                    )
-
-            elif event.key == pygame.K_BACKSPACE:
-                self.text = self.text[:-1]
-                self.update_suggestions()
-            else:
-                self.text += event.unicode
-                self.update_suggestions()
+    if event.type == pygame.MOUSEBUTTONDOWN:
         if self.back_button.collidepoint(event.pos):
             self.page_manager.set_page(
-                DrawMainPage(self.screen, self.page_manager, self.page_manager.username , self.handler))
+                DrawMainPage(self.screen, self.page_manager,
+                             self.page_manager.username, self.handler))
             return
-    def draw(self):
-        self.screen.fill(DARK_BG)
-        draw_stars(self.screen)
 
-        # Title
-        self.draw_text("Search Users", BIG_FONT, NEON_BLUE, WIDTH // 2, 80)
+        if self.input_rect.collidepoint(event.pos):
+            self.active = True
+        else:
+            self.active = False
 
-        # Input box
-        draw_glow_rect(
-            self.screen,
-            self.input_rect,
-            PANEL,
-            NEON_BLUE if self.active else NEON_PURPLE
-        )
-        mouse_pos = pygame.mouse.get_pos()
-        draw_glow_rect(self.screen, self.back_button, PANEL,
-               NEON_BLUE if self.back_button.collidepoint(mouse_pos) else NEON_PURPLE)
-        self.draw_text("Back", FONT, WHITE, self.back_button.centerx, self.back_button.centery)
-        text_surface = FONT.render(self.text, True, WHITE)
-        self.screen.blit(text_surface, (self.input_rect.x + 10, self.input_rect.y + 10))
-
-        # Suggestions
-        mouse_pos = pygame.mouse.get_pos()
-
-        draw_glow_rect(
-            self.screen,
-            self.back_button,
-            PANEL,
-            NEON_BLUE if self.back_button.collidepoint(mouse_pos) else NEON_PURPLE
-        )
-
-        self.draw_text(
-            "Back",
-            FONT,
-            WHITE,
-            self.back_button.centerx,
-            self.back_button.centery
-        )
         for name, rect in self.suggestion_rects:
-            pygame.draw.rect(self.screen, PANEL, rect, border_radius=6)
-            pygame.draw.rect(self.screen, NEON_PURPLE, rect, 1, border_radius=6)
+            if rect.collidepoint(event.pos):
+                self.text = name
+                self.update_suggestions()
 
-            text_surface = SMALL_FONT.render(name, True, WHITE)
-            self.screen.blit(text_surface, (rect.x + 10, rect.y + 10))
+    if event.type == pygame.KEYDOWN and self.active:
+        if event.key == pygame.K_RETURN:
+            if self.text in self.suggestions:
+                self.page_manager.set_page(
+                    DrawUserPage(self.screen, self.page_manager, self.handler, self.text))
+        elif event.key == pygame.K_BACKSPACE:
+            self.text = self.text[:-1]
+            self.update_suggestions()
+        else:
+            self.text += event.unicode
+            self.update_suggestions()
+    def draw(self):
+    self.screen.fill(DARK_BG)
+    draw_stars(self.screen)
+    mouse_pos = pygame.mouse.get_pos()
+
+    self.draw_text("Search Users", BIG_FONT, NEON_BLUE, WIDTH // 2, 80)
+
+    # Back button
+    draw_glow_rect(self.screen, self.back_button, PANEL,
+                   NEON_BLUE if self.back_button.collidepoint(mouse_pos) else NEON_PURPLE)
+    self.draw_text("Back", FONT, WHITE,
+                   self.back_button.centerx, self.back_button.centery)
+
+    # Input box
+    draw_glow_rect(self.screen, self.input_rect, PANEL,
+                   NEON_BLUE if self.active else NEON_PURPLE)
+    text_surface = FONT.render(self.text, True, WHITE)
+    self.screen.blit(text_surface, (self.input_rect.x + 10, self.input_rect.y + 10))
+
+    # Suggestions
+    for name, rect in self.suggestion_rects:
+        pygame.draw.rect(self.screen, PANEL, rect, border_radius=6)
+        pygame.draw.rect(self.screen, NEON_PURPLE, rect, 1, border_radius=6)
+        text_surface = SMALL_FONT.render(name, True, WHITE)
+        self.screen.blit(text_surface, (rect.x + 10, rect.y + 10))
