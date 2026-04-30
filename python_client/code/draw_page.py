@@ -460,11 +460,12 @@ class DrawSearchUserPage:
             return
 
         results = self.handler.search_usernames(self.text)
+        print(results)
 
         if not isinstance(results, dict):
-            self.suggestions = []
+            self.suggestions = results
         else:
-            self.suggestions = results.get('results') or []
+            self.suggestions = results.get('usernames', [])
 
         self.create_suggestion_rects()
 

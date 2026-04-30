@@ -38,7 +38,7 @@ class Game_manager:
             
             if os.path.isdir(full_path):
                 # We use the folder name (entry) as the key
-                new_game = Game(filepath=full_path, title=entry)
+                new_game = Game(filepath=full_path, title=entry.lower())
                 
                 # Auto-load the leaderboard if the file exists
                 score_file = os.path.join(full_path, "scores.json")
@@ -49,12 +49,12 @@ class Game_manager:
                 self.games.set(entry, new_game)
 
     def get_game(self, title):
-        return self.games.get(title)
+        return self.games.get(title.lower())
     
     def add_score_lb(self, game_name, value, user):
-        self.games.get(game_name).score_leader_board.add_score(user, value)
+        self.games.get(game_name.lower()).score_leader_board.add_score(user, value)
     
     def add_time_lb(self, game_name, time, user):
-            self.games.get(game_name).time_leader_board.add_score(user, time)
+            self.games.get(game_name.lower()).time_leader_board.add_score(user, time)
 
     
