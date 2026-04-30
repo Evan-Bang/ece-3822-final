@@ -120,6 +120,7 @@ class AccountManager:
                     self.usernames.add_word(username)
         except FileNotFoundError:
             pass
+        
     def create_account(self, username, password):
         """
         Create a new account with the given username and password

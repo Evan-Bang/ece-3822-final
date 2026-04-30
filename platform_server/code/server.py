@@ -34,6 +34,8 @@ class PlatformServer:
 
         # Main features:
         self.accounts = acc.AccountManager()
+        
+
 
         self.gm = Game_manager(str(games_dir))
         self.gsm = game_server_launcher(
@@ -41,7 +43,15 @@ class PlatformServer:
             str(server_bin),
             str(ports_file)
         )
-        
+        for username in self.accounts.ids.items():
+            prof = self.accounts.get_profile(username[0])
+            for session in prof.sessions:
+                game = session.game
+                username = session.username
+                score = session.score
+                time_played = session.time_played
+                self.gm.add_score_lb(game, score, username)
+                self.gm.add_time_lb(game, time_played, username)
         # Clients
         self.clients = ArrayList() # list of connected clients
 
@@ -153,6 +163,7 @@ class PlatformServer:
             score_lb = [{"uuid": u, "score": s} for u, s in game.score_leader_board.get_top_n(10)]
             time_lb  = [{"uuid": u, "time": t}  for u, t  in game.time_leader_board.get_top_n(10)]
             return {'success': True, 'score_leaderboard': score_lb, 'time_leaderboard': time_lb}
+        
         elif request_type == 'get_user_data':
             username = message.get('username')
             account = self.accounts.get_profile(username)

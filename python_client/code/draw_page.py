@@ -377,7 +377,7 @@ class DrawGamePage:
 
     # ---------------------------------------------------------------- helpers
     def format_time(self, seconds):
-        seconds = int(seconds)
+        seconds = int(float(seconds))
         m, s = divmod(seconds, 60)
         return f"{m}m {s:02d}s" if m else f"{s}s"
 
@@ -627,7 +627,7 @@ class DrawUserPage:
 
     # ----------------------------------------------------- helpers
     def format_time(self, seconds):
-        seconds = int(seconds)
+        seconds = int(float(seconds))
         m, s = divmod(seconds, 60)
         return f"{m}m {s:02d}s" if m else f"{s}s"
 
