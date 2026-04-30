@@ -1,5 +1,5 @@
 import pygame
-WIDTH, HEIGHT = 800, 600
+WIDTH, HEIGHT = 800, 800
 FONT = pygame.font.Font(None, 32)
 BIG_FONT = pygame.font.Font(None, 48)
 SMALL_FONT = pygame.font.Font(None, 24)
@@ -21,3 +21,22 @@ GAME_THELLUSOMA_PORT= 50061
 GAME_LIZZYS_ADVENTURE_PORT=50085
 MAIN_PATH = '../../'
 IP_ADDRESS = 'localhost'
+
+## LEADERBOARD PAGE STUFF
+# Colors
+PANEL_BG     = (17, 17, 42)
+BORDER       = (45, 45, 94)
+ROW_ALT      = (26, 26, 58)
+ROW_HL       = (49, 46, 129)      # highlight for current player
+HL_BORDER    = (99, 102, 241)
+PURP         = (167, 139, 250)
+BLUE         = (147, 197, 253)
+MUTED        = (107, 114, 128)
+NAME_COL     = (209, 213, 219)
+MEDAL        = [(251, 191, 36), (156, 163, 175), (180, 83, 9)]
+BTN_BG       = (79, 70, 229)
+BTN_HOV      = (99, 102, 241)
+INPUT_BG     = (22, 22, 50)
+INPUT_ACTIVE = (30, 30, 70)
+ERR_COL      = (248, 113, 113)
+OK_COL       = (110, 231, 183)

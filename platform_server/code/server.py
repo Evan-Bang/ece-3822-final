@@ -1,6 +1,7 @@
 """
 Python server for the Arcade
 """
+from datetime import date
 
 import socket
 import asyncio
@@ -115,7 +116,7 @@ class PlatformServer:
                 print(f"Account not found for username: {username}")
                 return {'success': False, 'message': 'Invalid user'}
 
-            account.build_session(message)
+            account.build_session(message, date.today())
             print(f"Built session for {username}: {account.sessions[-1].encode()}")
             print(f"Received summary from C++: {username} scored {score} in {game_name}")
 
