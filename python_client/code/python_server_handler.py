@@ -84,9 +84,19 @@ class ServerHandler:
 
             data = (json.dumps(request) + "\n").encode('utf-8')
             self.client_socket.sendall(data)
+            
+            # read until new line
+            buffer = b""
+            while True:
+                packet = self.client_socket.recv(BUFFER_SIZE)
+                if not packet:
+                    break
+                buffer += packet
+                if b"\n" in packet:
+                    break
 
-            response = self.client_socket.recv(BUFFER_SIZE)
-            return json.loads(response.decode('utf-8'))
+            response = json.loads(buffer.decode('utf-8').strip())
+            return response
 
         except socket.timeout:
             print("Server timeout")

@@ -104,9 +104,9 @@ def random_game():
 def random_score():
     """
     Generate a random score for testing.
-    output integer: an integer between 0 and 9999
+    output integer: an integer between 0 and 150, in increments of 10
     """
-    random_score = random.randint(0, 9999)
+    random_score = random.randrange(0, 151, 10)
     return random_score
 
 def random_playtime():
@@ -123,7 +123,8 @@ def test_create_account():
     """
     print ("   Testing account creation...")
     manager = AccountManager()
-    result = manager.create_account("testuser", "password123")
+    manager.create_account("testuser", "password123")
+    result = manager.accounts.get("testuser")
     assert hasattr(result, 'username') and hasattr(result, 'user_id'), "Account creation should return a Profile instance with 'username' and 'user_id' attributes."
     assert result.username == "testuser", f"Expected username to be 'testuser', but got '{result.username}' instead."
     assert result.user_id is not None, "A user_id should have been assigned."
@@ -137,7 +138,7 @@ def test_create_duplicate_account():
     manager = AccountManager()
     manager.create_account("testuser", "password123")
     result = manager.create_account("testuser", "differentpass")
-    assert result == False
+    assert result == 'False'
     print(" ✓ Duplicate account creation was successfully prevented.")
 
 def test_authenticate_valid():
@@ -148,7 +149,8 @@ def test_authenticate_valid():
     manager = AccountManager()
     new_profile = manager.create_account("anothertestuser", "password456")
     result = manager.authenticate("anothertestuser", "password456")
-    assert result == new_profile, f"Expected both the created and the authenticated profile to share the same username and user_id"
+    assert result[0] == 'True'
+    assert result[1] == 'Login successful'
     print(" ✓ Valid authentication worked correctly.")
 
 def test_authenticate_invalid_password():
@@ -198,7 +200,8 @@ def test_add_session_to_profile():
     """
     print("   Testing adding session to profile...")
     manager = AccountManager()
-    new_profile = manager.create_account("sessiontestuser", "password321")
+    manager.create_account("sessiontestuser", "password321")
+    new_profile = manager.accounts.get("sessiontestuser")
     session = new_profile.create_session(game="Thellusoma", time_played=42, score=9001)
     assert new_profile.sessions[0].game == "Thellusoma"
     assert new_profile.sessions[0].username == "sessiontestuser"
@@ -241,12 +244,14 @@ def test_random_account_creation(seed=123456789,num_accounts=10):
     for num in range(num_accounts):
         username = random_username()
         password = random_password()
-        new_profile = manager.create_account(username, password)
+        manager.create_account(username, password)
+        new_profile = manager.accounts.get(username)
         assert hasattr(new_profile, 'username') and hasattr(new_profile, 'user_id'), "Account creation should return a Profile instance with 'username' and 'user_id' attributes."
         assert new_profile.username == username, f"Expected username to be '{username}', but got '{new_profile.username}' instead."
         assert new_profile.user_id is not None, "A user_id should have been assigned."
         result = manager.authenticate(username, password)
-        assert result == new_profile, f"Expected both the created and the authenticated profile to share the same username and user_id"
+        assert result[0] == 'True'
+        assert result[1] == 'Login successful'
     print(" ✓ Random account creation and authentication worked correctly.")
 
 def test_duplicate_random_account_creation(seed=1234567890,num_accounts=10):
@@ -259,8 +264,8 @@ def test_duplicate_random_account_creation(seed=1234567890,num_accounts=10):
     for num in range(num_accounts):
         username = random_username()
         password = random_password()
-        new_profile = manager.create_account(username, password)
-        assert manager.create_account(username, password) == False
+        manager.create_account(username, password)
+        assert manager.create_account(username, password) == 'False'
     print(" ✓ Duplicate random account creation was successfully prevented.")
 
 def test_random_sessions_addition(seed=12345678910, num_accounts=10):
@@ -274,8 +279,37 @@ def test_random_sessions_addition(seed=12345678910, num_accounts=10):
     for num in range(num_accounts):
         username = random_username()
         password = random_password()
-        new_profile = manager.create_account(username, password)
+        manager.create_account(username, password)
+        new_profile = manager.accounts.get(username)
         user_list.append(new_profile)
+        for amount in range(random.randint(1,10)):
+            # Add a random session for the selected user
+            game = random_game()
+            playtime = random_playtime()
+            score = random_score()
+            session = new_profile.create_session(game=game, time_played=playtime, score=score)
+        new_profile.save_data() # check the saved data
+        with open(new_profile.data_file, "r") as f:
+            data = json.load(f)
+            for session in new_profile.sessions:
+                session_data = data['GAME_HISTORY'][f'SESSION_{session.id}']
+                assert session_data['GAME'] == session.game
+                assert session_data['USERNAME'] == session.username
+                assert session_data['PLAYTIME'] == session.time_played
+                assert session_data['SCORE'] == session.score
+    print(" ✓ Adding sessions to random profiles worked correctly.")
+
+def random_sessions_addition(seed=12345678910, num_accounts=1000):
+    """
+    Test adding sessions to profiles with random usernames. 
+    """
+    print("   Testing adding sessions to random profiles...")
+    manager = AccountManager()
+    random.seed(seed)
+    for num in range(num_accounts):
+        username = random_username()
+        password = random_password()
+        new_profile = manager.create_account(username, password)
         for amount in range(random.randint(1,10)):
             # Add a random session for the selected user
             game = random_game()
