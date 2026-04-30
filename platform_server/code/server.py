@@ -35,7 +35,6 @@ class PlatformServer:
         self.accounts = acc.AccountManager()
 
         self.gm = Game_manager(str(games_dir))
-        print(self.gm.games)
         self.gsm = game_server_launcher(
             str(games_dir),
             str(server_bin),
@@ -95,7 +94,6 @@ class PlatformServer:
 
     async def process_message(self, message): # processes incoming client messages and generates appropriate responses
         request_type = message.get('type')
-        print(message)
         
         # Aunthentication and account management
         if request_type == 'login':
