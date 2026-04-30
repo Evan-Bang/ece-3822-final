@@ -27,6 +27,7 @@ pygame.display.set_caption("Virtual Arcade Login")
 class PageManager:
     def __init__(self):
         self.current_page = None
+        self.username = ""
     def set_page(self, page):
         self.current_page = page
     def draw(self, screen):
@@ -76,6 +77,7 @@ class DrawLoginPage:
 
                 if user.logged_in:
                     print("Login successful")
+                    self.page_manager.username = self.username_text
                     self.page_manager.set_page(DrawMainPage(self.screen, self.page_manager, self.username_text, self.handler))
                 else:
                     print("Login failed")
@@ -258,12 +260,12 @@ class DrawMainPage:
 
             elif self.profile_button.collidepoint(mouse_pos):
                 self.page_manager.set_page(
-                    DrawUserPage(self.screen, self.page_manager, self.handler, self.username)
+                    DrawUserPage(self.screen, self.page_manager, self.handler, self.page_manager.username)
                 )
             for game, rect in self.game_buttons:
                 if rect.collidepoint(mouse_pos):
                     self.page_manager.set_page(
-                        DrawGamePage(self.screen, self.page_manager, self.username, game, self.handler)
+                        DrawGamePage(self.screen, self.page_manager, self.page_manager.username, game, self.handler)
                     )
                     break
     def draw(self):
@@ -493,13 +495,12 @@ class DrawGamePage:
 
         # Error / results summary
         if self.range_error:
-            self.draw_text(self.range_error, SMALL_FONT, ERR_COL,
-                           x, y + 54, align="left")
+            self.draw_text(self.range_error, SMALL_FONT, ERR_COL, x, y + 54, align="left")
         elif self.range_results is not None:
             ns = len(self.range_results['scores'])
             nt = len(self.range_results['times'])
-            self.draw_text(f"{ns} score result(s)  |  {nt} time result(s)",
-                           SMALL_FONT, self.OK_COL, x, y + 54, align="left")
+            summary = f"Found {ns} scores, {nt} times. (Click Refresh to clear)"
+            self.draw_text(summary, SMALL_FONT, OK_COL, x, y + 54, align="left")
 
     # ---------------------------------------------------------------- events
     def handle_event(self, event):
@@ -540,33 +541,75 @@ class DrawGamePage:
 
     # ----------------------------------------------------------------- draw
     def draw(self):
+        # 1. Background and Stars
         self.screen.fill(DARK_BG)
         draw_stars(self.screen)
         mouse_pos = pygame.mouse.get_pos()
 
+        # 2. Header Title
         self.draw_text(self.game, BIG_FONT, PURP, WIDTH // 2, 90)
 
-        self.draw_button(self.run_button,     "Play",    mouse_pos)
-        self.draw_button(self.back_button,    "Back",    mouse_pos)
-        self.draw_button(self.refresh_button, "Refresh", mouse_pos, 
-                         color_override=(30, 58, 95) if not self.refresh_button.collidepoint(mouse_pos) else (37, 99, 235))
+        # 3. Action Buttons (Play, Back, Refresh)
+        self.draw_button(self.run_button, "Play", mouse_pos)
+        self.draw_button(self.back_button, "Back", mouse_pos)
+        
+        # Highlight Refresh button differently if a search is active (acts as a 'Clear')
+        refresh_label = "Clear" if self.range_results is not None else "Refresh"
+        refresh_idle_col = (30, 58, 95) if self.range_results is None else (70, 30, 30)
+        
+        self.draw_button(
+            self.refresh_button, 
+            refresh_label, 
+            mouse_pos, 
+            color_override=refresh_idle_col if not self.refresh_button.collidepoint(mouse_pos) else (37, 99, 235)
+        )
 
+        # 4. Panel Configuration
         panel_w = (WIDTH - 60) // 2
         panel_h = 300
         panel_y = 248
 
+        # --- Data Selection Logic ---
+        # If the user has performed a range query, show those results.
+        # Otherwise, show the default global leaderboards.
+        if self.range_results is not None:
+            score_data  = self.range_results.get('scores', [])
+            time_data   = self.range_results.get('times', [])
+            score_title = "Filtered Scores"
+            time_title  = "Filtered Times"
+        else:
+            score_data  = self.score_leaderboard
+            time_data   = self.time_leaderboard
+            score_title = "Top Scores"
+            time_title  = "Longest Survival"
+
+        # 5. Draw the Two Main Panels
+        # Left Panel: Scores
         self.draw_panel(
-            "Top Scores", self.score_leaderboard, self.player_score,
-            x=20, y=panel_y, w=panel_w, h=panel_h,
+            score_title, 
+            score_data, 
+            self.player_score,
+            x=20, 
+            y=panel_y, 
+            w=panel_w, 
+            h=panel_h,
             value_key="score"
         )
+        
+        # Right Panel: Survival Time
         self.draw_panel(
-            "Longest Survival", self.time_leaderboard, self.player_time,
-            x=30 + panel_w, y=panel_y, w=panel_w, h=panel_h,
-            value_key="time", format_fn=self.format_time
+            time_title, 
+            time_data, 
+            self.player_time,
+            x=30 + panel_w, 
+            y=panel_y, 
+            w=panel_w, 
+            h=panel_h,
+            value_key="time", 
+            format_fn=self.format_time
         )
 
-        # Range query section below the panels
+        # 6. Draw Range Query Input Section (Bottom)
         self.draw_range_section(x=20, y=panel_y + panel_h + 16, w=WIDTH - 40)
 
 class DrawUserPage:
