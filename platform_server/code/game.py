@@ -52,9 +52,11 @@ class Game_manager:
         return self.games.get(title.lower())
     
     def add_score_lb(self, game_name, value, user):
-        self.games.get(game_name.lower()).score_leader_board.add_score(user, value)
+        if game_name.lower() in self.games:
+            self.games.get(game_name.lower()).score_leader_board.add_score(user, value)
     
     def add_time_lb(self, game_name, time, user):
+        if game_name.lower() in self.games:
             self.games.get(game_name.lower()).time_leader_board.add_score(user, time)
 
     

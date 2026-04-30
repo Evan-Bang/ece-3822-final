@@ -27,6 +27,7 @@ pygame.display.set_caption("Virtual Arcade Login")
 class PageManager:
     def __init__(self):
         self.current_page = None
+        self.username = ""
     def set_page(self, page):
         self.current_page = page
     def draw(self, screen):
@@ -76,6 +77,7 @@ class DrawLoginPage:
 
                 if user.logged_in:
                     print("Login successful")
+                    self.page_manager.username = self.username_text
                     self.page_manager.set_page(DrawMainPage(self.screen, self.page_manager, self.username_text, self.handler))
                 else:
                     print("Login failed")
@@ -258,12 +260,12 @@ class DrawMainPage:
 
             elif self.profile_button.collidepoint(mouse_pos):
                 self.page_manager.set_page(
-                    DrawUserPage(self.screen, self.page_manager, self.handler, self.username)
+                    DrawUserPage(self.screen, self.page_manager, self.handler, self.page_manager.username)
                 )
             for game, rect in self.game_buttons:
                 if rect.collidepoint(mouse_pos):
                     self.page_manager.set_page(
-                        DrawGamePage(self.screen, self.page_manager, self.username, game, self.handler)
+                        DrawGamePage(self.screen, self.page_manager, self.page_manager.username, game, self.handler)
                     )
                     break
     def draw(self):
@@ -296,6 +298,320 @@ class DrawMainPage:
             draw_glow_rect(self.screen, rect, PANEL,
                            NEON_BLUE if rect.collidepoint(mouse_pos) else NEON_PURPLE)
             self.draw_text(game, FONT, WHITE, rect.centerx, rect.centery)       
+class DrawGamePage:
+    def __init__(self, screen, page_manager, username, game, handler):
+        self.screen       = screen
+        self.page_manager = page_manager
+        self.username     = username
+        self.game         = game
+        self.handler      = handler
+
+        self.run_button     = pygame.Rect(240, 190, 160, 42)
+        self.back_button    = pygame.Rect(420, 190, 160, 42)
+        self.refresh_button = pygame.Rect(WIDTH - 130, 190, 110, 42)
+
+        # Leaderboard data
+        self.score_leaderboard = []
+        self.time_leaderboard  = []
+        self.player_score      = None
+        self.player_time       = None
+
+        # Range query state — two input boxes per panel
+        self.range_inputs = {
+            'score_min': '', 'score_max': '',
+            'time_min':  '', 'time_max':  '',
+        }
+        self.active_input    = None
+        self.range_results   = None   # None = not searched yet
+        self.range_error     = ''
+
+        self.build_leaderboard()
+        self.fetch_player_score()
+
+    # ------------------------------------------------------------------ data
+    def build_leaderboard(self):
+        resp = self.handler.process_request({"type": "get_leaderboard", "game_name": self.game})
+        if resp and resp.get("success"):
+            self.score_leaderboard = resp.get("score_leaderboard", [])
+            self.time_leaderboard  = resp.get("time_leaderboard",  [])
+        else:
+            self.score_leaderboard = []
+            self.time_leaderboard  = []
+
+    def fetch_player_score(self):
+        resp = self.handler.process_request({
+            "type": "get_player_score",
+            "username": self.username,
+            "game_name": self.game
+        })
+        if resp and resp.get("success"):
+            self.player_score = resp.get("score")
+            self.player_time  = resp.get("time")
+
+    def do_refresh(self):
+        self.range_results = None
+        self.range_error   = ''
+        self.build_leaderboard()
+        self.fetch_player_score()
+
+    def do_range_query(self):
+        self.range_error = ''
+        try:
+            payload = {"type": "ranged_query", "game_name": self.game}
+            si, sx = self.range_inputs['score_min'], self.range_inputs['score_max']
+            ti, tx = self.range_inputs['time_min'],  self.range_inputs['time_max']
+            if si or sx:
+                payload['min_score'] = int(si or 0)
+                payload['max_score'] = int(sx or 999999)
+            if ti or tx:
+                payload['min_time'] = int(ti or 0)
+                payload['max_time'] = int(tx or 999999)
+            resp = self.handler.process_request(payload)
+            if resp and resp.get("success"):
+                self.range_results = {
+                    'scores': resp.get('score_results', []),
+                    'times':  resp.get('time_results',  [])
+                }
+            else:
+                self.range_error = resp.get('message', 'Query failed')
+        except ValueError:
+            self.range_error = 'Enter whole numbers only'
+
+    # ---------------------------------------------------------------- helpers
+    def format_time(self, seconds):
+        seconds = int(float(seconds))
+        m, s = divmod(seconds, 60)
+        return f"{m}m {s:02d}s" if m else f"{s}s"
+
+    def draw_text(self, text, font, color, x, y, align="center"):
+        surf = font.render(str(text), True, color)
+        rect = surf.get_rect(**{
+            "center":   (x, y),
+            "midleft":  (x, y),
+            "midright": (x, y)
+        }[align] if False else {})
+        if align == "center":  rect = surf.get_rect(center=(x, y))
+        elif align == "left":  rect = surf.get_rect(midleft=(x, y))
+        elif align == "right": rect = surf.get_rect(midright=(x, y))
+        self.screen.blit(surf, rect)
+
+    def draw_button(self, rect, label, mouse_pos, color_override=None):
+        bg = color_override or (BTN_HOV if rect.collidepoint(mouse_pos) else BTN_BG)
+        pygame.draw.rect(self.screen, bg, rect, border_radius=8)
+        pygame.draw.rect(self.screen, HL_BORDER, rect, 1, border_radius=8)
+        self.draw_text(label, FONT, WHITE, rect.centerx, rect.centery)
+
+    def draw_input(self, rect, key, placeholder):
+        active = self.active_input == key
+        bg = INPUT_ACTIVE if active else INPUT_BG
+        pygame.draw.rect(self.screen, bg, rect, border_radius=6)
+        pygame.draw.rect(self.screen, HL_BORDER if active else BORDER, rect, 1, border_radius=6)
+        val = self.range_inputs[key]
+        if val:
+            self.draw_text(val, SMALL_FONT, WHITE, rect.x + 6, rect.centery, align="left")
+        else:
+            self.draw_text(placeholder, SMALL_FONT, MUTED, rect.x + 6, rect.centery, align="left")
+
+    # --------------------------------------------------------------- panels
+    def draw_panel(self, title, entries, player_val, x, y, w, h, value_key, format_fn=None):
+        is_time  = value_key == "time"
+        hdr_col  = BLUE if is_time else PURP
+        val_col  = BLUE if is_time else PURP
+
+        pygame.draw.rect(self.screen, PANEL_BG, (x, y, w, h), border_radius=10)
+        pygame.draw.rect(self.screen, BORDER,   (x, y, w, h), 1, border_radius=10)
+
+        # Header + player's own score
+        self.draw_text(title, FONT, hdr_col, x + w // 2, y + 20)
+        if player_val is not None:
+            pv_str = format_fn(player_val) if format_fn else str(player_val)
+            self.draw_text(f"Your best: {pv_str}", SMALL_FONT, OK_COL,
+                           x + w // 2, y + 36)
+            line_y = y + 48
+        else:
+            line_y = y + 34
+
+        pygame.draw.line(self.screen, BORDER, (x + 12, line_y), (x + w - 12, line_y))
+
+        row_y = line_y + 14
+        row_h = 28
+
+        if not entries:
+            self.draw_text("No data yet", SMALL_FONT, MUTED, x + w // 2, row_y + 14)
+            return
+
+        for i, entry in enumerate(entries[:8]):
+            is_player = entry.get("uuid") == self.username
+            row_rect  = pygame.Rect(x + 8, row_y - 4, w - 16, row_h - 2)
+
+            if is_player:
+                pygame.draw.rect(self.screen, ROW_HL, row_rect, border_radius=4)
+                pygame.draw.rect(self.screen, HL_BORDER, row_rect, 1, border_radius=4)
+            elif i % 2 == 0:
+                pygame.draw.rect(self.screen, ROW_ALT, row_rect, border_radius=4)
+
+            rank_col = MEDAL[i] if i < 3 else MUTED
+            self.draw_text(f"{i+1}", SMALL_FONT, rank_col, x + 22, row_y + 10)
+
+            name_col = WHITE if is_player else NAME_COL
+            self.draw_text(entry.get("uuid", "???"), SMALL_FONT, name_col,
+                           x + 38, row_y + 10, align="left")
+
+            raw = entry.get(value_key, 0)
+            display = format_fn(raw) if format_fn else str(raw)
+            self.draw_text(display, SMALL_FONT, val_col, x + w - 12, row_y + 10, align="right")
+
+            row_y += row_h
+
+    def draw_range_section(self, x, y, w):
+        # Labels
+        self.draw_text("Score range:", SMALL_FONT, MUTED, x, y, align="left")
+        self.draw_text("Time range (s):", SMALL_FONT, MUTED, x + w // 2 + 8, y, align="left")
+
+        box_w = (w // 2 - 20) // 2
+        # Score inputs
+        r_smin = pygame.Rect(x,              y + 18, box_w, 28)
+        r_smax = pygame.Rect(x + box_w + 6,  y + 18, box_w, 28)
+        # Time inputs
+        r_tmin = pygame.Rect(x + w // 2 + 8,              y + 18, box_w, 28)
+        r_tmax = pygame.Rect(x + w // 2 + 8 + box_w + 6,  y + 18, box_w, 28)
+
+        self.draw_input(r_smin, 'score_min', 'min')
+        self.draw_input(r_smax, 'score_max', 'max')
+        self.draw_input(r_tmin, 'time_min',  'min')
+        self.draw_input(r_tmax, 'time_max',  'max')
+
+        # Store rects for hit-testing
+        self._range_rects = {
+            'score_min': r_smin, 'score_max': r_smax,
+            'time_min':  r_tmin, 'time_max':  r_tmax,
+        }
+
+        # Search button
+        search_rect = pygame.Rect(x + w - 90, y + 18, 90, 28)
+        mouse_pos   = pygame.mouse.get_pos()
+        self.draw_button(search_rect, "Search", mouse_pos)
+        self._search_rect = search_rect
+
+        # Error / results summary
+        if self.range_error:
+            self.draw_text(self.range_error, SMALL_FONT, ERR_COL, x, y + 54, align="left")
+        elif self.range_results is not None:
+            ns = len(self.range_results['scores'])
+            nt = len(self.range_results['times'])
+            summary = f"Found {ns} scores, {nt} times. (Click Refresh to clear)"
+            self.draw_text(summary, SMALL_FONT, OK_COL, x, y + 54, align="left")
+
+    # ---------------------------------------------------------------- events
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            pos = event.pos
+
+            if self.run_button.collidepoint(pos):
+                RunInstance(self.username).run(self.game)
+
+            elif self.back_button.collidepoint(pos):
+                self.page_manager.set_page(
+                    DrawMainPage(self.screen, self.page_manager, self.username, self.handler))
+
+            elif self.refresh_button.collidepoint(pos):
+                self.do_refresh()
+
+            elif hasattr(self, '_search_rect') and self._search_rect.collidepoint(pos):
+                self.do_range_query()
+
+            elif hasattr(self, '_range_rects'):
+                self.active_input = None
+                for key, rect in self._range_rects.items():
+                    if rect.collidepoint(pos):
+                        self.active_input = key
+                        break
+
+            else:
+                self.active_input = None
+
+        elif event.type == pygame.KEYDOWN and self.active_input:
+            key = self.active_input
+            if event.key == pygame.K_BACKSPACE:
+                self.range_inputs[key] = self.range_inputs[key][:-1]
+            elif event.key == pygame.K_RETURN:
+                self.do_range_query()
+            elif event.unicode.isdigit():          # numbers only
+                self.range_inputs[key] += event.unicode
+
+    # ----------------------------------------------------------------- draw
+    def draw(self):
+        # 1. Background and Stars
+        self.screen.fill(DARK_BG)
+        draw_stars(self.screen)
+        mouse_pos = pygame.mouse.get_pos()
+
+        # 2. Header Title
+        self.draw_text(self.game, BIG_FONT, PURP, WIDTH // 2, 90)
+
+        # 3. Action Buttons (Play, Back, Refresh)
+        self.draw_button(self.run_button, "Play", mouse_pos)
+        self.draw_button(self.back_button, "Back", mouse_pos)
+        
+        # Highlight Refresh button differently if a search is active (acts as a 'Clear')
+        refresh_label = "Clear" if self.range_results is not None else "Refresh"
+        refresh_idle_col = (30, 58, 95) if self.range_results is None else (70, 30, 30)
+        
+        self.draw_button(
+            self.refresh_button, 
+            refresh_label, 
+            mouse_pos, 
+            color_override=refresh_idle_col if not self.refresh_button.collidepoint(mouse_pos) else (37, 99, 235)
+        )
+
+        # 4. Panel Configuration
+        panel_w = (WIDTH - 60) // 2
+        panel_h = 300
+        panel_y = 248
+
+        # --- Data Selection Logic ---
+        # If the user has performed a range query, show those results.
+        # Otherwise, show the default global leaderboards.
+        if self.range_results is not None:
+            score_data  = self.range_results.get('scores', [])
+            time_data   = self.range_results.get('times', [])
+            score_title = "Filtered Scores"
+            time_title  = "Filtered Times"
+        else:
+            score_data  = self.score_leaderboard
+            time_data   = self.time_leaderboard
+            score_title = "Top Scores"
+            time_title  = "Longest Survival"
+
+        # 5. Draw the Two Main Panels
+        # Left Panel: Scores
+        self.draw_panel(
+            score_title, 
+            score_data, 
+            self.player_score,
+            x=20, 
+            y=panel_y, 
+            w=panel_w, 
+            h=panel_h,
+            value_key="score"
+        )
+        
+        # Right Panel: Survival Time
+        self.draw_panel(
+            time_title, 
+            time_data, 
+            self.player_time,
+            x=30 + panel_w, 
+            y=panel_y, 
+            w=panel_w, 
+            h=panel_h,
+            value_key="time", 
+            format_fn=self.format_time
+        )
+
+        # 6. Draw Range Query Input Section (Bottom)
+        self.draw_range_section(x=20, y=panel_y + panel_h + 16, w=WIDTH - 40)
+
 class DrawUserPage:
     def __init__(self, screen, page_manager, handler, username):
         self.screen = screen
@@ -303,38 +619,143 @@ class DrawUserPage:
         self.handler = handler
         self.username = username
 
-        self.back_button = pygame.Rect(50, 50, 120, 40)
+        self.back_button = pygame.Rect(40, 40, 120, 42)
 
-        self.user_data = None
         self.sessions = []
+        self.stats = {
+            "total_sessions": 0,
+            "best_score": 0,
+            "best_time": 0
+        }
 
         self.load_user_data()
 
+    # ----------------------------------------------------- data
     def load_user_data(self):
         user = UserData(self.handler)
         response = user.get_user_data(self.username)
 
-        if response and response.get('success'):
-            data = response.get('user_data', {})
-            self.sessions = data.get('sessions', [])
-        else:
+        if response and response.get("success"):
+            data = response.get("user_data", {})
+            raw_sessions = data.get("sessions", [])
+
             self.sessions = []
 
-    def draw_text(self, text, font, color, x, y, center=True):
-        textobj = font.render(text, True, color)
-        if center:
-            textrect = textobj.get_rect(center=(x, y))
-        else:
-            textrect = textobj.get_rect(topleft=(x, y))
-        self.screen.blit(textobj, textrect)
+            for s in raw_sessions:
+                self.sessions.append({
+                    "game": s.get("GAME", "Unknown"),
+                    "score": s.get("SCORE", 0),
+                    "time": s.get("PLAYTIME", 0),
+                    "date": s.get("DATE", "--")
+                })
 
+            self.stats["total_sessions"] = len(self.sessions)
+
+            if self.sessions:
+                self.stats["best_score"] = max(
+                    session["score"] for session in self.sessions
+                )
+                self.stats["best_time"] = max(
+                    session["time"] for session in self.sessions
+                )
+            else:
+                self.stats["best_score"] = 0
+                self.stats["best_time"] = 0
+
+        else:
+            self.sessions = []
+            self.stats["total_sessions"] = 0
+            self.stats["best_score"] = 0
+            self.stats["best_time"] = 0
+
+    # ----------------------------------------------------- helpers
+    def format_time(self, seconds):
+        seconds = int(float(seconds))
+        m, s = divmod(seconds, 60)
+        return f"{m}m {s:02d}s" if m else f"{s}s"
+
+    def draw_text(self, text, font, color, x, y, align="center"):
+        surf = font.render(str(text), True, color)
+
+        if align == "center":
+            rect = surf.get_rect(center=(x, y))
+        elif align == "left":
+            rect = surf.get_rect(midleft=(x, y))
+        elif align == "right":
+            rect = surf.get_rect(midright=(x, y))
+
+        self.screen.blit(surf, rect)
+
+    def draw_button(self, rect, label, mouse_pos):
+        bg = (45, 45, 85) if rect.collidepoint(mouse_pos) else PANEL
+        pygame.draw.rect(self.screen, bg, rect, border_radius=8)
+        pygame.draw.rect(self.screen, NEON_BLUE, rect, 1, border_radius=8)
+        self.draw_text(label, FONT, WHITE, rect.centerx, rect.centery)
+
+    def draw_stat_card(self, label, value, x, y, w, h, accent):
+        pygame.draw.rect(self.screen, PANEL, (x, y, w, h), border_radius=10)
+        pygame.draw.rect(self.screen, accent, (x, y, w, h), 2, border_radius=10)
+
+        self.draw_text(label, SMALL_FONT, WHITE, x + w // 2, y + 18)
+        self.draw_text(value, FONT, accent, x + w // 2, y + h // 2 + 10)
+
+    def draw_sessions_panel(self, x, y, w, h):
+        pygame.draw.rect(self.screen, PANEL, (x, y, w, h), border_radius=12)
+        pygame.draw.rect(self.screen, NEON_PURPLE, (x, y, w, h), 2, border_radius=12)
+
+        # Title
+        self.draw_text("Session History", FONT, NEON_BLUE, x + w // 2, y + 20)
+
+        # Header row
+        header_y = y + 55
+        pygame.draw.line(self.screen, WHITE, (x + 15, header_y), (x + w - 15, header_y), 1)
+
+        self.draw_text("Game", SMALL_FONT, NEON_BLUE, x + 35, header_y + 16, align="left")
+        self.draw_text("Score", SMALL_FONT, NEON_BLUE, x + 260, header_y + 16, align="right")
+        self.draw_text("Time", SMALL_FONT, NEON_BLUE, x + 390, header_y + 16, align="right")
+        self.draw_text("Date", SMALL_FONT, NEON_BLUE, x + w - 25, header_y + 16, align="right")
+
+        # Rows
+        row_y = header_y + 38
+        row_h = 32
+
+        if not self.sessions:
+            self.draw_text("No session data available", FONT, WHITE,
+                           x + w // 2, y + h // 2)
+            return
+
+        for i, session in enumerate(self.sessions[:8]):
+            row_rect = pygame.Rect(x + 10, row_y - 10, w - 20, row_h)
+
+            if i % 2 == 0:
+                pygame.draw.rect(self.screen, (35, 35, 60), row_rect, border_radius=6)
+
+            game = session.get("game", "Unknown")
+            score = session.get("score", 0)
+            time_val = self.format_time(session.get("time", 0))
+            date = session.get("date", "--")
+
+            self.draw_text(game, SMALL_FONT, WHITE, x + 35, row_y + 5, align="left")
+            self.draw_text(score, SMALL_FONT, NEON_PURPLE, x + 260, row_y + 5, align="right")
+            self.draw_text(time_val, SMALL_FONT, NEON_BLUE, x + 390, row_y + 5, align="right")
+            self.draw_text(date, SMALL_FONT, WHITE, x + w - 25, row_y + 5, align="right")
+
+            row_y += row_h
+
+    # ----------------------------------------------------- events
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
             if self.back_button.collidepoint(event.pos):
                 self.page_manager.set_page(
-                    DrawMainPage(self.screen, self.page_manager, self.username, self.handler)
+                    DrawMainPage(
+                        self.screen,
+                        self.page_manager,
+                        self.username,
+                        self.handler
+                    )
                 )
 
+    # ----------------------------------------------------- draw
     def draw(self):
         self.screen.fill(DARK_BG)
         draw_stars(self.screen)
@@ -342,98 +763,57 @@ class DrawUserPage:
         mouse_pos = pygame.mouse.get_pos()
 
         # Title
-        self.draw_text(f"{self.username}'s Profile", BIG_FONT, NEON_BLUE, WIDTH // 2, 80)
+        self.draw_text(
+            f"{self.username}'s Profile",
+            BIG_FONT,
+            NEON_BLUE,
+            WIDTH // 2,
+            70
+        )
 
         # Back button
-        draw_glow_rect(
-            self.screen,
-            self.back_button,
-            PANEL,
-            NEON_BLUE if self.back_button.collidepoint(mouse_pos) else NEON_PURPLE
+        self.draw_button(self.back_button, "Back", mouse_pos)
+
+        # Stats row
+        card_w = 180
+        card_h = 80
+        gap = 20
+        start_x = (WIDTH - (card_w * 3 + gap * 2)) // 2
+        y = 120
+
+        self.draw_stat_card(
+            "Sessions",
+            self.stats["total_sessions"],
+            start_x,
+            y,
+            card_w,
+            card_h,
+            NEON_BLUE
         )
-        self.draw_text("Back", FONT, WHITE,
-                       self.back_button.centerx, self.back_button.centery)
 
-        # Sessions title
-        self.draw_text("Recent Sessions", FONT, WHITE, WIDTH // 2, 150)
+        self.draw_stat_card(
+            "Best Score",
+            self.stats["best_score"],
+            start_x + card_w + gap,
+            y,
+            card_w,
+            card_h,
+            NEON_PURPLE
+        )
 
-        # Sessions list
-        y = 200
+        self.draw_stat_card(
+            "Best Time",
+            self.format_time(self.stats["best_time"]),
+            start_x + (card_w + gap) * 2,
+            y,
+            card_w,
+            card_h,
+            NEON_BLUE
+        )
 
-        if self.sessions:
-            for session in self.sessions[:10]:  # limit display
-                # session structure depends on your backend
-                # assuming dict like {'game': ..., 'score': ..., 'date': ...}
-                text = str(session)
-                self.draw_text(text, FONT, WHITE, WIDTH // 2, y)
-                y += 30
-        else:
-            self.draw_text("No session data available", FONT, WHITE, WIDTH // 2, 200)
+        # Sessions table
+        self.draw_sessions_panel(90, 240, WIDTH - 180, 320)
 
-class DrawGamePage:
-    def __init__(self, screen, page_manager, username, game, handler):
-        self.screen = screen
-        self.page_manager = page_manager
-        self.username = username
-        self.game = game
-        self.handler = handler
-
-        self.run_button = pygame.Rect(300, 200, 200, 50)
-        self.back_button = pygame.Rect(300, 270, 200, 50)
-
-        self.leaderboard = []   # ALWAYS initialize
-
-        self.build_leaderboard()
-
-    def build_leaderboard(self):
-        request = {
-            "type": "get_leaderboard",
-            "game_name": self.game
-        }
-
-        response = self.handler.process_request(request)
-
-        if response and response.get("success"):
-            self.leaderboard = response.get("score_leaderboard", [])
-        else:
-            self.leaderboard = []
-
-    def draw_text(self, text, font, color, x, y):
-        textobj = font.render(str(text), True, color)
-        textrect = textobj.get_rect(center=(x, y))
-        self.screen.blit(textobj, textrect)
-
-    def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if self.run_button.collidepoint(event.pos):
-                instance = RunInstance(self.username)
-                instance.run(self.game)
-
-            elif self.back_button.collidepoint(event.pos):
-                self.page_manager.set_page(
-                    DrawMainPage(self.screen, self.page_manager, self.username, self.handler)
-                )
-
-    def draw(self):
-        self.screen.fill(WHITE)
-
-        self.draw_text(self.game, BIG_FONT, BLACK, WIDTH // 2, 100)
-
-        pygame.draw.rect(self.screen, DARK_GRAY, self.run_button)
-        pygame.draw.rect(self.screen, DARK_GRAY, self.back_button)
-
-        self.draw_text("Play", FONT, WHITE, self.run_button.centerx, self.run_button.centery)
-        self.draw_text("Back", FONT, WHITE, self.back_button.centerx, self.back_button.centery)
-
-        self.draw_text("Leaderboard", FONT, BLACK, WIDTH // 2, 350)
-
-        y = 400
-        if self.leaderboard:
-            for entry in self.leaderboard[:10]:
-                self.draw_text(entry, FONT, BLACK, WIDTH // 2, y)
-                y += 30
-        else:
-            self.draw_text("No scores yet", FONT, BLACK, WIDTH // 2, 400)
 class DrawSearchUserPage:
     def __init__(self, screen, page_manager, handler):
         self.screen = screen

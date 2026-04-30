@@ -5,6 +5,7 @@ View player profile: provide information about play times, games played, scores,
 """
 import sys
 import os
+from datetime import date as dt_date
 root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 sys.path.insert(0, root_path)
 user_data_path = os.path.join(root_path, "user_data")
@@ -27,19 +28,23 @@ class Profile:
         self.next_session_id = 1
         self.password = None
         self.initialize_data()
+
     def add_session(self, session):
         self.sessions.append(session)
-    def create_session(self, game, time_played, score):
-        session = Session(game, self.username, time_played, score, self.next_session_id)
+
+    def create_session(self, game, time_played, score, date = None):
+        session = Session(game, self.username, time_played, score, self.next_session_id, date)
         self.add_session(session)
         self.next_session_id += 1
         return session
-    def build_session(self, summary):
-        game = summary['game_name']
-        time_played = summary['playtime']
-        score = summary['score']
-        session = self.create_session(game,time_played,score)
+    
+    def build_session(self, summary, date = None):
+        game = summary.get('game_name', 'Unknown Game')
+        time_played = summary.get('playtime', 0) # Default to 0 seconds
+        score = summary.get('score', 0)
+        session = self.create_session(game,time_played,score, date)
         return session
+    
     def initialize_data(self):
         # Load user data from file or create new file if it doesn't exist
         if self.user_id:
@@ -47,22 +52,22 @@ class Profile:
             try:
                 with open(self.data_file, 'r') as f:
                     data = json.load(f)
-                    id = 0
-                    for session in data['GAME_HISTORY'].values():
+                    max_id = 0
+                    for session_key, session in data['GAME_HISTORY'].items():
+                        # Extract the actual ID from the key "SESSION_X"
+                        current_id = int(session_key.split('_')[1])
                         session_data = Session(
-                            session['GAME'],
+                          session.get('GAME', 'Unknown'),
                             self.username,
-                            session['PLAYTIME'],
-                            session['SCORE'],
-                            id
+                            session.get('PLAYTIME', 0),
+                            session.get('SCORE', 0),
+                            current_id,
+                            session.get('DATE', None)
                         )
-                        session_data.id = id
-                        id += 1
-                        self.next_session_id += 1
-                        session_data.game = session['GAME']
-                        session_data.time_played = session['PLAYTIME']
-                        session_data.score = session['SCORE']
                         self.sessions.append(session_data)
+                        if current_id >= max_id:
+                            max_id = current_id + 1
+                    self.next_session_id = max_id
                     self.password = data['PASSWORD_HASH']
             except FileNotFoundError:
                 if self.user_id is not None:
@@ -86,14 +91,21 @@ class Profile:
         return False
 
 class Session:
-    def __init__(self, game, username, time_played, score, id):
+    def __init__(self, game, username, time_played, score, id, date = None):
         self.game = game
         self.username = username
         self.time_played = time_played
         self.score = score
         self.id = id
+        if isinstance(date, str):
+            self.date = date
+        elif date is None:
+            self.date = dt_date.today().isoformat()
+        else:
+            # This handles cases where a date object is passed directly
+            self.date = str(date)
     def encode(self):
-        return {"GAME":self.game,"USERNAME":self.username,"PLAYTIME":self.time_played,"SCORE":self.score}
+        return {"GAME":self.game,"USERNAME":self.username,"PLAYTIME":self.time_played,"SCORE":self.score, "DATE": self.date}
 class AccountManager:
     def __init__(self):
         self.players = ArrayList()
@@ -108,6 +120,7 @@ class AccountManager:
                     self.usernames.add_word(username)
         except FileNotFoundError:
             pass
+        
     def create_account(self, username, password):
         """
         Create a new account with the given username and password
@@ -190,6 +203,20 @@ class AccountManager:
             return self.usernames.find_words(prefix)
         else:
             return ArrayList()
+    def get_profile(self, username):
+        # Check if they are already in the "active" memory
+        account = self.accounts.get(username)
+        if account:
+            return account
+            
+        # If not, check if they exist in our ID registry
+        if username in self.ids:
+            # Load the profile from the disk into the HashTable
+            new_profile = Profile(username, self.ids)
+            self.accounts.set(username, new_profile)
+            return new_profile
+            
+        return None
 if __name__ == "__main__":
     username1 = "tuf08092"
     username2 = "tut69764"
