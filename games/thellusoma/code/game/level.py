@@ -39,8 +39,7 @@ class Level:
 
         # Network setup with serializer
         self.network = NetworkClient(player_name, server_host, server_port, serializer)
-        # self.connected = self.network.connect()
-        self.connected = False
+        self.connected = self.network.connect()
         # Track other players
         self.other_players = {}  # player_id -> Character sprite
 
@@ -311,7 +310,7 @@ class Level:
 
         # Send our position, character type, and status to server
         character_type = self.player.character_name.lower()
-        status = self.player.status.replace("_idle", "").replace("_attack", "")
+        status = self.player.gamestatus.replace("_idle", "").replace("_attack", "")
         self.network.send_update(self.player.rect.x, self.player.rect.y, character_type, status)
 
         # Get updates from server
