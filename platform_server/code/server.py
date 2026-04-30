@@ -35,6 +35,7 @@ class PlatformServer:
         self.accounts = acc.AccountManager()
 
         self.gm = Game_manager(str(games_dir))
+        print(self.gm.games)
         self.gsm = game_server_launcher(
             str(games_dir),
             str(server_bin),
