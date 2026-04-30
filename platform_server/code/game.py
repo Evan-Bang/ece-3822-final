@@ -49,6 +49,7 @@ class Game_manager:
                 self.games.set(entry, new_game)
 
     def get_game(self, title):
+        title = title.replace(" ", "_").lower()
         return self.games.get(title.lower())
     
     def add_score_lb(self, game_name, value, user):
