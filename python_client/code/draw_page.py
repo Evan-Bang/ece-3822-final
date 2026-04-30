@@ -175,20 +175,7 @@ class DrawCreateAccountPage:
                 self.active_box = 'password'
             else:
                 self.active_box = None
-
             if self.create_button.collidepoint(event.pos):
-<<<<<<< HEAD
-                
-                user = UserData(self.handler)
-                user.create_account(self.username_text, self.password_text)
-                if not self.handler.connected:
-                    self.handler.connect(self.username_text)
-                if user.user_id is not None:
-                    print("Account created successfully")
-                    self.page_manager.set_page(DrawMainPage(self.screen, self.page_manager, self.username_text, self.handler))
-                else:
-                    print("Account creation failed")
-=======
                 self.error_message = ''
                 if not self.username_text.strip():
                     self.error_message = "Username cannot be empty."
@@ -218,7 +205,6 @@ class DrawCreateAccountPage:
             if self.back_button.collidepoint(event.pos):
                 self.page_manager.set_page(
                     DrawLoginPage(self.screen, self.page_manager, self.handler))
->>>>>>> c75d8464219579e4a506ee9bd5dc59c238ceae7b
 
         if event.type == pygame.KEYDOWN:
             if self.active_box == 'username':

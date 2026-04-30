@@ -42,7 +42,7 @@ def load_leaderboard_data():
     game_tables = HashTable()
 
     # iterate through each username in the raw data 
-    for username in raw_data:
+    for user in raw_data:
         username = user["username"]
         games = user["games"]
         
