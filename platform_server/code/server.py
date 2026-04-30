@@ -111,6 +111,7 @@ class PlatformServer:
             account = self.accounts.accounts.get(username)
 
             if account is None:
+                print(f"Account not found for username: {username}")
                 return {'success': False, 'message': 'Invalid user'}
 
             account.build_session(message)
@@ -170,7 +171,7 @@ class PlatformServer:
             if not results:
                 results = []
 
-            # 🔥 remove None values
+            # Remove values of none.
             results = [r for r in results if r is not None]
 
             return {
