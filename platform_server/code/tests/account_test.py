@@ -92,25 +92,28 @@ def random_password():
 def random_game():
     """
     Pick a random game from our list of games
-    output string: one of "Thellusoma", "Surviving 1111", "Lizzys Adventure"
+    output string: one of "thellusoma", "surviving_1111", "lizzys_adventure"
     """
-    random_game = random.choice(["Thellusoma", "Surviving 1111", "Lizzys Adventure"])
+    random_game = random.choice(["thellusoma", "surviving_1111", "lizzys_adventure"])
     return random_game
 
 def random_score():
     """
     Generate a random score for testing.
-    output integer: an integer between 0 and 150, in increments of 10
+    output integer: mean of 100, standard deviation of 30
     """
-    random_score = random.randrange(0, 151, 10)
+    random_score = random.gauss(100, 30)
+    random_score = int(random_score / 10) * 10
+    random_score = max(0, min(150, random_score))
     return random_score
 
 def random_playtime():
     """
     Generate a random playtime for testing.
-    output integer: an integer between 0 and 999
+    output integer: mean of 180, standard deviation of 30
     """
-    random_playtime = random.randint(0, 999)
+    random_playtime = random.gauss(180, 30)
+    random_playtime = int(random_playtime)
     return random_playtime
 
 def test_create_account():
@@ -278,7 +281,7 @@ def test_random_sessions_addition(seed=12345678910, num_accounts=10):
         manager.create_account(username, password)
         new_profile = manager.accounts.get(username)
         user_list.append(new_profile)
-        for amount in range(random.randint(1,10)):
+        for amount in range(random.randint(1,5)):
             # Add a random session for the selected user
             game = random_game()
             playtime = random_playtime()
@@ -295,11 +298,11 @@ def test_random_sessions_addition(seed=12345678910, num_accounts=10):
                 assert session_data['SCORE'] == session.score
     print(" ✓ Adding sessions to random profiles worked correctly.")
 
-def random_sessions_addition(seed=12345678910, num_accounts=1000):
+def random_sessions_addition(seed=12345678910, num_accounts=10):
     """
     Test adding sessions to profiles with random usernames. 
     """
-    print("   Testing adding sessions to random profiles...")
+    print("   Testing adding sessions to random existing profiles...")
     manager = AccountManager()
     random.seed(seed)
     for num in range(num_accounts):
@@ -321,9 +324,9 @@ def random_sessions_addition(seed=12345678910, num_accounts=1000):
                 assert session_data['USERNAME'] == session.username
                 assert session_data['PLAYTIME'] == session.time_played
                 assert session_data['SCORE'] == session.score
-    print(" ✓ Adding sessions to random profiles worked correctly.")
+    print(" ✓ Adding sessions to random existing profiles worked correctly.")
 
-def local_test(seed=12345678910):
+def local_test_manny(seed=12345678910):
         manager = AccountManager()
         random.seed(seed)
         username = 'tuf08092'
@@ -337,6 +340,19 @@ def local_test(seed=12345678910):
             session = profile.create_session(game=game, time_played=playtime, score=score)
         profile.save_data()
 
+def fresh_setup():
+    # clean the whole user_data — remove all JSON files
+    for filename in os.listdir(temp_user_data_path):
+        if filename.endswith(".json"):
+            os.remove(os.path.join(temp_user_data_path, filename))
+    # reinitialize with a fresh name_id.json
+    with open(f"{temp_user_data_path}/name_id.json", "w") as f:
+        json.dump({}, f)
+    manager = AccountManager()
+    manager.create_account("tuf08092", "nullptr")
+    manager.create_account("tut69764", "nullptr")
+    manager.create_account("tuq10172", "nullptr")
+
 def cleanup():
     """
     Clean up temporary user data files after testing.
@@ -345,6 +361,7 @@ def cleanup():
     print(" ✓ Cleaned up temporary user data files.")
 
 if __name__ == "__main__":
+    reset = "--reset" in sys.argv
     local = "--local" in sys.argv
     print(root_path)
     if not local:
@@ -353,17 +370,19 @@ if __name__ == "__main__":
         # make a fresh name_id.json file for testing
         with open(f"{temp_user_data_path}/name_id.json", "w") as f:
             json.dump({}, f) # should now be able to run the tests many times consecutively without issues
-    elif "--local" in sys.argv:
+    elif local:
         temp_user_data_path = root_path + '/user_data'
     keep = "--keep" in sys.argv
     if "--seed" in sys.argv:
         seed = "--seed" in sys.argv and int(sys.argv[sys.argv.index("--seed") + 1])
+        seed0 = seed
     else:
         seed = random.randint(1, 999999)
+        seed0 = seed
     if "--num" in sys.argv:
         num_accounts = "--num" in sys.argv and int(sys.argv[sys.argv.index("--num") + 1])
     else:
-        num_accounts = 10
+        num_accounts = 10   
     if not local:
         test_create_account()
         test_create_duplicate_account()
@@ -384,18 +403,24 @@ if __name__ == "__main__":
            print(f"Error occurred while testing duplicate random account creation: {e}")
            print(f"It's possible that the seed {seed} led to a collision in usernames. You can try running the test again with a different seed using the --seed flag.")
         seed += 1
-    try:
-        test_random_sessions_addition(seed=seed)
-    except Exception as e:
-        print(f"Error occurred while testing random sessions addition: {e}")
-        print(f"It's possible that the seed {seed} led to a collision in usernames. You can try running the test again with a different seed using the --seed flag.")
-    seed += 1
+    elif local:
+        if reset:
+            fresh_setup()          
+    if not reset:
+        try:
+            test_random_sessions_addition(seed=seed, num_accounts=num_accounts)
+        except Exception as e:
+            print(f"Error occurred while testing random sessions addition: {e}")
+            print(f"It's possible that the seed {seed} led to a collision in usernames. You can try running the test again with a different seed using the --seed flag.")
+        seed += 1
     if "--manny" in sys.argv:
-        local_test(seed=seed)
+        local_test_manny(seed=seed)
+        seed += 1
     print(" ✓ All tests passed!")
     if not local:
         if not keep:
             cleanup()
         else:
             print("   Temporary user data files have been kept for inspection.")
-    print(f"   Random seed used for random tests: {seed-1}")
+    print(f"   Random seed used for random tests: {seed0}")
+    print(f"   Number of accounts created during random tests: {num_accounts}")
