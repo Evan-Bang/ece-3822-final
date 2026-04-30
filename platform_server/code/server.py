@@ -117,6 +117,7 @@ class PlatformServer:
                 return {'success': False, 'message': 'Invalid user'}
 
             account.build_session(message, date.today())
+            account.save_data()
             print(f"Built session for {username}: {account.sessions[-1].encode()}")
             print(f"Received summary from C++: {username} scored {score} in {game_name}")
 

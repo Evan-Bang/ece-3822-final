@@ -5,6 +5,7 @@ View player profile: provide information about play times, games played, scores,
 """
 import sys
 import os
+from datetime import date as dt_date
 root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 sys.path.insert(0, root_path)
 user_data_path = os.path.join(root_path, "user_data")
@@ -47,22 +48,22 @@ class Profile:
             try:
                 with open(self.data_file, 'r') as f:
                     data = json.load(f)
-                    id = 0
-                    for session in data['GAME_HISTORY'].values():
+                    max_id = 0
+                    for session_key, session in data['GAME_HISTORY'].items():
+                        # Extract the actual ID from the key "SESSION_X"
+                        current_id = int(session_key.split('_')[1])
                         session_data = Session(
                             session['GAME'],
                             self.username,
                             session['PLAYTIME'],
                             session['SCORE'],
-                            id
+                            current_id,
+                            session.get('DATE')
                         )
-                        session_data.id = id
-                        id += 1
-                        self.next_session_id += 1
-                        session_data.game = session['GAME']
-                        session_data.time_played = session['PLAYTIME']
-                        session_data.score = session['SCORE']
                         self.sessions.append(session_data)
+                        if current_id >= max_id:
+                            max_id = current_id + 1
+                    self.next_session_id = max_id
                     self.password = data['PASSWORD_HASH']
             except FileNotFoundError:
                 if self.user_id is not None:
@@ -92,7 +93,7 @@ class Session:
         self.time_played = time_played
         self.score = score
         self.id = id
-        self.date = date
+        self.date = date if isinstance(date, str) else (date.today().isoformat() if date is None else str(date))
     def encode(self):
         return {"GAME":self.game,"USERNAME":self.username,"PLAYTIME":self.time_played,"SCORE":self.score, "DATE": self.date}
 class AccountManager:
