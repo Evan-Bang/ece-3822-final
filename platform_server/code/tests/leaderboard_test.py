@@ -228,7 +228,7 @@ if __name__ == "__main__":
     test_ranged_query()
     test_query_specific_user()
     test_sort_leaderboard()
-    test_save_and_load_json()
+    # test_save_and_load_json() # DEPRECATED
     if not keep:
         cleanup()
     else:

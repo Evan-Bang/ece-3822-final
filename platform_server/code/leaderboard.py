@@ -65,8 +65,8 @@ class Leaderboard:
         returned in tuples as (uuid, score)
         """
         # we have to make fake members for comparisons to work
-        bot_object = leaderboard_member(0, bot_score)
-        top_object = leaderboard_member(0, top_score)
+        bot_object = leaderboard_member("", bot_score)
+        top_object = leaderboard_member("~", top_score)
 
         result = ArrayList()
         between = self.score_tree.range_query(bot_object, top_object)
