@@ -7,7 +7,7 @@ Different character types that players can choose from
 import pygame
 from character import Character
 
-class Character1(Character):
+class Chharacter1(Character):
     """Cleric - Healing specialist"""
     def __init__(self, pos, groups, obstacle_sprites, player_id=None, is_local=True):
         super().__init__(pos, groups, obstacle_sprites, player_id, is_local)
@@ -40,7 +40,7 @@ class Character1(Character):
         return '../../graphics/characters/cleric/down/frame_000.png'
 
 
-class Character2(Character):
+class Chharacter2(Character):
     """Hobbit - Sneaky and fast"""
     def __init__(self, pos, groups, obstacle_sprites, player_id=None, is_local=True):
         super().__init__(pos, groups, obstacle_sprites, player_id, is_local)
@@ -72,7 +72,7 @@ class Character2(Character):
         return '../../graphics/characters/hobbit/down/frame_000.png'
 
 
-class Character3(Character):
+class Chharacter3(Character):
     """Thief - High attack, low defense"""
     def __init__(self, pos, groups, obstacle_sprites, player_id=None, is_local=True):
         super().__init__(pos, groups, obstacle_sprites, player_id, is_local)
@@ -103,7 +103,7 @@ class Character3(Character):
         return '../../graphics/characters/thief/down/frame_000.png'
 
 
-class Character4(Character):
+class Chharacter4(Character):
     """Wizard - Magical powerhouse"""
     def __init__(self, pos, groups, obstacle_sprites, player_id=None, is_local=True):
         super().__init__(pos, groups, obstacle_sprites, player_id, is_local)
