@@ -108,7 +108,6 @@ class Session:
         return {"GAME":self.game,"USERNAME":self.username,"PLAYTIME":self.time_played,"SCORE":self.score, "DATE": self.date}
 class AccountManager:
     def __init__(self):
-        self.players = ArrayList()
         self.usernames = prefix_tree()
         self.accounts = HashTable()
         self.ids = HashTable()
