@@ -25,26 +25,30 @@ class ServerHandler:
         if self.tunnel_started:
             return
 
-        # Check if port already in use
-        import subprocess
-        result = subprocess.run(
-            ["lsof", "-ti", ":50074"],
-            capture_output=True,
-            text=True
-        )
+        import platform
+        if platform.system() == "Windows":
+            result = subprocess.run(
+                ["netstat", "-ano"],
+                capture_output=True, text=True
+            )
+            port_in_use = ":50074" in result.stdout
+        else:
+            result = subprocess.run(
+                ["lsof", "-ti", ":50074"],
+                capture_output=True, text=True
+            )
+            port_in_use = bool(result.stdout.strip())
 
-        if result.stdout.strip():
+        if port_in_use:
             print("Tunnel already exists, reusing it")
             self.tunnel_started = True
             return
 
         subprocess.Popen([
-            'ssh',
-            '-N',
+            'ssh', '-N',
             '-L', f'50074:localhost:{self.port}',
             f'{username}@ece-000.eng.temple.edu'
         ])
-
         self.tunnel_started = True
         time.sleep(1.5)
     def connect(self, username):
