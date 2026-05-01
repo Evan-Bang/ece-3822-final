@@ -498,16 +498,16 @@ class DrawGamePage:
 
     def do_range_query(self):
         self.range_error = ''
+        payload = {"type": "ranged_query", "game_name": self.game}
+        si, sx = self.range_inputs['score_min'], self.range_inputs['score_max']
+        ti, tx = self.range_inputs['time_min'],  self.range_inputs['time_max']
+        if si or sx:
+            payload['min_score'] = int(si or 0)
+            payload['max_score'] = int(sx or 999999)
+        if ti or tx:
+            payload['min_time'] = int(ti or 0)
+            payload['max_time'] = int(tx or 999999)
         try:
-            payload = {"type": "ranged_query", "game_name": self.game}
-            si, sx = self.range_inputs['score_min'], self.range_inputs['score_max']
-            ti, tx = self.range_inputs['time_min'],  self.range_inputs['time_max']
-            if si or sx:
-                payload['min_score'] = int(si or 0)
-                payload['max_score'] = int(sx or 999999)
-            if ti or tx:
-                payload['min_time'] = int(ti or 0)
-                payload['max_time'] = int(tx or 999999)
             resp = self.handler.process_request(payload)
             if resp and resp.get("success"):
                 self.range_results = {
@@ -515,9 +515,10 @@ class DrawGamePage:
                     'times':  resp.get('time_results',  [])
                 }
             else:
-                self.range_error = resp.get('message', 'Query failed')
-        except ValueError:
-            self.range_error = 'Enter whole numbers only'
+                self.range_error = resp.get('message', 'Query failed') if resp else 'No response'
+        except Exception as e:
+            self.range_error = 'Server error, try refreshing'
+            print(f"Range query error: {e}")
 
     # ---------------------------------------------------------------- helpers
     def format_time(self, seconds):
