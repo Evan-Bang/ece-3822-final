@@ -1,3 +1,9 @@
+"""
+Client side networking code
+Handles communication between the client and the server
+"""
+
+
 import sys
 import os
 import json

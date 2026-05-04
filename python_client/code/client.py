@@ -1,8 +1,15 @@
+"""
+Client-side code for the game. Handles the GUI and communication with the server.
+This is the entry point for our client application
+Ran using python client.py
+"""
+
 from draw_page import *
 from game_instance_manager import *
 from python_server_handler import *
 import pygame
 from settings import *
+
 class Client:
     def __init__(self, screen):
         self.screen = screen
@@ -10,6 +17,7 @@ class Client:
         self.server_handler = ServerHandler()
         self.game_manager = GameInstanceManager()
         self.page_manager.set_page(DrawLoginPage(screen, self.page_manager, self.server_handler))
+
 if __name__ == "__main__":
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))

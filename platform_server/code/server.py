@@ -1,5 +1,9 @@
 """
 Python server for the Arcade
+Handles communications between clients and the game servers.
+Hosts the account and game manager.
+Main file to be ran to start the server.
+Run using python server.py
 """
 from datetime import date
 
@@ -24,6 +28,9 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
 
 class PlatformServer:
+    """
+    Main server class 
+    """
     def __init__(self, host='localhost', port=50074):
         self.host = host
         self.port = port
@@ -55,20 +62,27 @@ class PlatformServer:
         # Clients
         self.clients = ArrayList() # list of connected clients
 
-    async def start_server(self): # starts the server and listens for incoming connections
+    async def start_server(self):
+        """
+        Starts the server, listening for client requests. Does handling asynchronously.
+        """
         server = await asyncio.start_server(self.handle_client, self.host, self.port)
         print(f'Server started on {self.host}:{self.port} at {time.ctime()}')
         self.gsm.launch_servers()
         async with server:
             await server.serve_forever() # keeps the server running
+
     def safe_json(self, obj):
         try:
             return json.dumps(obj)
         except Exception as e:
             print("JSON ERROR:", e)
             return json.dumps({"success": False, "error": "serialization failure"})
-    # Process client requests and provide appropriate responses based on the request type (e.g., login, account creation, leaderboard queries, etc.)
+    
     async def handle_client(self, reader, writer):
+        """
+        Handles client connections to recieve messages and send responses.
+        """
         client_socket = writer.get_extra_info('socket')
         # SAVE THE NAME HERE while the connection is active
         addr = writer.get_extra_info('peername') 
@@ -94,7 +108,6 @@ class PlatformServer:
                 print(f'Oops, something broke: {e}')
                 break
 
-        # USE THE SAVED ADDR HERE instead of client_socket.getpeername()
         print(f'Client disconnected: {addr} at {time.ctime()}')
         
         if client_socket in self.clients:
@@ -103,16 +116,21 @@ class PlatformServer:
         writer.close()
         await writer.wait_closed()
 
-    async def process_message(self, message): # processes incoming client messages and generates appropriate responses
+    async def process_message(self, message):
+        """
+        Message handling logic. 
+        """
         request_type = message.get('type')
         
-        # Aunthentication and account management
+        # ____________ Login authentication ____________
         if request_type == 'login':
             username = message.get('username')
             password = message.get('password')
             success, msg = self.accounts.authenticate(username, password)
             return {'success': success, 'message': msg}
         
+
+        # ____________ Game summary, sent by C++ game server ____________
         elif request_type == 'game_summary':
             print("Processing game summary...")
             username = message.get('username')
@@ -141,7 +159,8 @@ class PlatformServer:
             print(f"top 5 scores for {game_name} : {self.gm.games.get(game_name).score_leader_board.get_top_n(5)}")
             print(f"top 5 playtimes for {game_name}: {self.gm.games.get(game_name).time_leader_board.get_top_n(5)}")
             return {'success': True, 'message': 'Summary processed'}
-
+        
+        # ____________ Create account ____________
         elif request_type == 'create_account':
             username = message.get('username')
             password = message.get('password')
@@ -155,6 +174,7 @@ class PlatformServer:
             sessions = [session.encode() for session in account.sessions]
             return {'success': True, 'sessions': sessions}
         
+        # ____________ Leaderboard get top 100 players ____________
         elif request_type == 'get_leaderboard':
             game_name = message.get('game_name')
             game = self.gm.games.get(game_name)
@@ -164,6 +184,7 @@ class PlatformServer:
             time_lb  = [{"uuid": u, "time": t}  for u, t  in game.time_leader_board.get_top_n(100)]
             return {'success': True, 'score_leaderboard': score_lb, 'time_leaderboard': time_lb}
         
+        # ____________ Player data by username ____________
         elif request_type == 'get_user_data':
             username = message.get('username')
             account = self.accounts.get_profile(username)
@@ -176,6 +197,7 @@ class PlatformServer:
             else:
                 return {'success': False, 'message': 'User not found'}
             
+        # ____________ Player Score by username ____________
         elif request_type == 'get_player_score':
             username = message.get('username')
             game_name = message.get('game_name')
@@ -186,10 +208,11 @@ class PlatformServer:
             playtime = game.time_leader_board.get_player_score(username)
             return {
                 'success': True,
-                'score': score,      # None if not on board
+                'score': score,      
                 'time': playtime
             }
 
+        # ____________ Leaderboard Ranged Queries ____________
         elif request_type == 'ranged_query':
             game_name = message.get('game_name')
             game = self.gm.games.get(game_name)
@@ -222,6 +245,7 @@ class PlatformServer:
                 'time_results': time_results
             }
                 
+        # ____________ Prefix search for usernames (for autocomplete) ____________
         elif request_type == 'prefix_search':
             prefix = message.get('prefix')
 
@@ -237,12 +261,6 @@ class PlatformServer:
                 'success': True,
                 'results': results
             }
-
-        # Chat
-
-        # Game hosting
-
-        # Other request types
         
         else:
             return {'success': False, 'message': 'Unknown request type'}

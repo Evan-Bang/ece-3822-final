@@ -4,7 +4,7 @@ leaderboard_member.py - object to be stored in leaderoard
 Author: Owen Ringrose
 Date: 4/17/2026
 
-This is so we have clean comparison logic for our BST.
+This is so we have clean comparison logic for our BST. Leaderboards use this to insert into our BST
 
 **** Revision History ****
 -4/19/2026: file created

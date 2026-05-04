@@ -1,3 +1,13 @@
+"""
+
+Client GUI handling logic.
+This code is very messy and trying to understand it is a headache.
+As this class is not focused on GUI's I would not read to deep into this file
+It works and that is that.
+"""
+
+
+
 import pygame
 import sys
 pygame.init()

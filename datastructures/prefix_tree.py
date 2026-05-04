@@ -5,6 +5,8 @@ see https://www.geeksforgeeks.org/dsa/trie-insert-and-search/ for more info
 
 Author: Owen Ringrose
 Date: 4/19/2026
+
+To test run the test in /Tests/prefix_test.py
 **** Revision History ****
 -4/19/2026: File created
 """

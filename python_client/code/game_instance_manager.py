@@ -1,3 +1,8 @@
+"""
+Handles running the games for the client. This includes launching the game processes and managing them.
+This also handles setting up SSH tunnels to the game servers 
+"""
+
 import pygame
 import sys
 import subprocess

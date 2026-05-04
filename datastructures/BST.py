@@ -6,6 +6,8 @@ Date: 4/17/2026
 
 Insertion logic from: https://www.geeksforgeeks.org/dsa/insertion-in-an-avl-tree/ Expanded this to add rest of BST functions
 
+We are using an AVL tree to implement our BST. This is because this AVL trees are always strictly balanced.
+Another option would be to use a Red-Black tree, which is a bit more relaxed in its balancing.
 **** Revision History ****
 -4/17/2026: implemented basic AVL structure
 -4/19/2026: Added get top_n
@@ -17,6 +19,7 @@ from datastructures.array import ArrayList
 from datastructures.stack import Stack
 
 class Node:
+    """Node class for AVL tree"""
     def __init__(self, key):
         self.key = key
         self.left = None
@@ -25,6 +28,7 @@ class Node:
     
 
 class BST:
+    """Binary Search Tree implemented as an AVL tree"""
     def __init__(self):
         self.head = None
         self.elements = 0

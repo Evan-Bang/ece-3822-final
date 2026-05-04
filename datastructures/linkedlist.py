@@ -5,6 +5,8 @@ Implements different types of linked lists for NPC movement:
 This is a doubly linked list
 I implemented this as a more standard version as opposed to the one in patrol_path
 
+
+I dont think this is used in the final project and is a left over from the labs
 Author: Owen Ringrose
 """
 class Node:
