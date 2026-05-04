@@ -103,7 +103,6 @@ def plot_results(sizes, create_t, auth_t, prefix_t):
     plt.show()
 
 if __name__ == "__main__":
-    # Increased sizes slightly to better show the Trie's advantage
     test_sizes = [10, 50, 100, 250, 500, 1000,2000, 5000]
     c_res, a_res, p_res = run_benchmark(test_sizes)
     plot_results(test_sizes, c_res, a_res, p_res)

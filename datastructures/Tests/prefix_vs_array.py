@@ -6,8 +6,6 @@ import sys
 import os
 from pathlib import Path
 
-# --- Path and Import Setup ---
-# Ensure your datastructures and prefix_tree are accessible
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from datastructures.prefix_tree import prefix_tree
