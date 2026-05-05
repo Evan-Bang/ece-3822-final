@@ -274,29 +274,32 @@ def test_random_sessions_addition(seed=12345678910, num_accounts=10):
     print("   Testing adding sessions to random profiles...")
     manager = AccountManager()
     random.seed(seed)
-    user_list = ArrayList()
+    new_user_num = 0
     for num in range(num_accounts):
         username = random_username()
         password = random_password()
-        manager.create_account(username, password)
-        new_profile = manager.accounts.get(username)
-        user_list.append(new_profile)
-        for amount in range(random.randint(1,5)):
-            # Add a random session for the selected user
-            game = random_game()
-            playtime = random_playtime()
-            score = random_score()
-            session = new_profile.create_session(game=game, time_played=playtime, score=score)
-        new_profile.save_data() # check the saved data
-        with open(new_profile.data_file, "r") as f:
-            data = json.load(f)
-            for session in new_profile.sessions:
-                session_data = data['GAME_HISTORY'][f'SESSION_{session.id}']
-                assert session_data['GAME'] == session.game
-                assert session_data['USERNAME'] == session.username
-                assert session_data['PLAYTIME'] == session.time_played
-                assert session_data['SCORE'] == session.score
+        result = manager.create_account(username, password)
+        if result != 'False':
+            new_profile = manager.accounts.get(username)
+            new_user_num += 1
+            for amount in range(int(random.gauss(6, 2))):
+                # Add a random session for the selected user
+                game = random_game()
+                playtime = random_playtime()
+                score = random_score()
+                session = new_profile.create_session(game=game, time_played=playtime, score=score)
+            new_profile.save_data() # check the saved data
+            with open(new_profile.data_file, "r") as f:
+                data = json.load(f)
+                for session in new_profile.sessions:
+                    session_data = data['GAME_HISTORY'][f'SESSION_{session.id}']
+                    assert session_data['GAME'] == session.game
+                    assert session_data['USERNAME'] == session.username
+                    assert session_data['PLAYTIME'] == session.time_played
+                    assert session_data['SCORE'] == session.score
     print(" ✓ Adding sessions to random profiles worked correctly.")
+    if local:
+        print(f"{new_user_num} new users were created and added to the existing user data")
 
 def random_sessions_addition(seed=12345678910, num_accounts=10):
     """
